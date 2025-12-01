@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using RemTechAvitoVehiclesParser;
 using Serilog;
 
 namespace Tests.PuppeteerTests;
@@ -15,7 +16,7 @@ public sealed class PuppeteerTestFixture : IAsyncLifetime
         ILogger logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
         services.AddSingleton(logger);
         services.AddSingleton<BrowserDownloader>();
-        services.AddSingleton<BrowserInstance>();
+        services.AddSingleton<BrowserFactory>();
         _sp = services.BuildServiceProvider();
     }
     
@@ -23,13 +24,10 @@ public sealed class PuppeteerTestFixture : IAsyncLifetime
     {
         BrowserDownloader downloader = _sp.GetRequiredService<BrowserDownloader>();
         await downloader.DownloadBrowser();
-        BrowserInstance instance = _sp.GetRequiredService<BrowserInstance>();
-        await instance.Instantiate(headless: false);
     }
 
     public async Task DisposeAsync()
     {
-        BrowserInstance instance = _sp.GetRequiredService<BrowserInstance>();
-        await instance.Destroy();
+        await Task.Yield();
     }
 }
