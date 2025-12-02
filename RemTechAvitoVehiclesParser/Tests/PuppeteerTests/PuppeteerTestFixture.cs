@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RemTechAvitoVehiclesParser;
+using RemTechAvitoVehiclesParser.Parsing;
 using Serilog;
 
 namespace Tests.PuppeteerTests;

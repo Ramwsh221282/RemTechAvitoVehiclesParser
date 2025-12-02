@@ -1,6 +1,6 @@
 ﻿using PuppeteerSharp;
 
-namespace RemTechAvitoVehiclesParser;
+namespace RemTechAvitoVehiclesParser.Parsing;
 
 public sealed class BrowserFactory
 {

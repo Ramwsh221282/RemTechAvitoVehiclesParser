@@ -1,6 +1,8 @@
 ﻿using PuppeteerSharp;
 using RemTechAvitoVehiclesParser;
 using RemTechAvitoVehiclesParser.FirewallBypass;
+using RemTechAvitoVehiclesParser.Parsing;
+using RemTechAvitoVehiclesParser.Utils;
 
 namespace Tests.PuppeteerTests;
 
@@ -51,6 +53,7 @@ public sealed class BrowserTests(PuppeteerTestFixture fixture) : IClassFixture<P
         await page.NavigatePage(targetUrl);
         bool solved = await new AvitoByPassFirewallWithRetry(new AvitoBypassFirewallLazy(page, new AvitoBypassFirewall(page))).Bypass();
         if (!solved) return;
+        
         await page.ScrollBottom();
         await page.ScrollTop();
         AvitoPagination pagination = await AvitoPagination.FromCatalogue(page, targetUrl);

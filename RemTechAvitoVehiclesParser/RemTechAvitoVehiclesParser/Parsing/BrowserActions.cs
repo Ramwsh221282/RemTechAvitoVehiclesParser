@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using PuppeteerSharp;
 
-namespace RemTechAvitoVehiclesParser;
+namespace RemTechAvitoVehiclesParser.Parsing;
 
 public static class BrowserActions
 {

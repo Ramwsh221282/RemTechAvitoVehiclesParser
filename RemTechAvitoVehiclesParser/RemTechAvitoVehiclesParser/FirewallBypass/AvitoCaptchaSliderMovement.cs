@@ -1,5 +1,7 @@
 using PuppeteerSharp;
 using PuppeteerSharp.Input;
+using RemTechAvitoVehiclesParser.Parsing;
+using RemTechAvitoVehiclesParser.Utils;
 
 namespace RemTechAvitoVehiclesParser.FirewallBypass;
 

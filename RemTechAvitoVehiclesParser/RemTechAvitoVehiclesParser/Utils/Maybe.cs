@@ -1,4 +1,4 @@
-﻿namespace RemTechAvitoVehiclesParser;
+﻿namespace RemTechAvitoVehiclesParser.Utils;
 
 public sealed class Maybe<T> where T : notnull
 {

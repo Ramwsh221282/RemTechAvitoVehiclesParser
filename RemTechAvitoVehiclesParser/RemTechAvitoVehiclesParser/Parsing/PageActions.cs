@@ -1,6 +1,7 @@
 ﻿using PuppeteerSharp;
+using RemTechAvitoVehiclesParser.Utils;
 
-namespace RemTechAvitoVehiclesParser;
+namespace RemTechAvitoVehiclesParser.Parsing;
 
 public static class PageActions
 {

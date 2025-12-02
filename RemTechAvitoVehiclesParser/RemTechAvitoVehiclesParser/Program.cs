@@ -1,6 +1,13 @@
-var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
+using RemTechAvitoVehiclesParser.Constants;
+using RemTechAvitoVehiclesParser.DependencyInjection;
+using RemTechAvitoVehiclesParser.OnStartup.ApplyDatabaseMigrations;
+using RemTechAvitoVehiclesParser.OnStartup.RegisterParser;
 
-app.MapGet("/", () => "Hello World!");
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Services.RegisterDependencies();
+
+WebApplication app = builder.Build();
+app.ApplyMigrations();
+await app.RegisterParser(ParserServiceConstants.Domain, ParserServiceConstants.Type);
 
 app.Run();
