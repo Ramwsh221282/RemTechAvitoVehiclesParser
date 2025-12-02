@@ -1,8 +1,8 @@
 ﻿using PuppeteerSharp;
 using RemTechAvitoVehiclesParser;
-using RemTechAvitoVehiclesParser.FirewallBypass;
 using RemTechAvitoVehiclesParser.Parsing;
-using RemTechAvitoVehiclesParser.Utils;
+using RemTechAvitoVehiclesParser.Parsing.FirewallBypass;
+using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
 
 namespace Tests.PuppeteerTests;
 

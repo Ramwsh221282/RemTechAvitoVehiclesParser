@@ -1,5 +1,5 @@
 ﻿using PuppeteerSharp;
-using RemTechAvitoVehiclesParser.Utils;
+using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
 
 namespace RemTechAvitoVehiclesParser.Parsing;
 
