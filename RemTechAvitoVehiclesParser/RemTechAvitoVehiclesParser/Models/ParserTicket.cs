@@ -1,5 +1,4 @@
 ﻿using System.Data;
-using System.Text.Json;
 using Dapper;
 
 namespace RemTechAvitoVehiclesParser.Models;
@@ -12,15 +11,15 @@ public delegate Task ParserTicketDatabaseOperation(
 public sealed class ParserTicket(
     Guid id, 
     string type,
+    string payload,
     DateTime created, 
     DateTime? finished)
 {
-    private readonly Dictionary<string, object> _payload = [];
     private readonly Guid _id = id;
     private readonly string _type = type;
     private readonly DateTime _created = created;
     private readonly DateTime? _finished = finished;
-    private string _cachedPayload = string.Empty;
+    private readonly string _payload = payload;
     
     private object MakeDbParameters()
     {
@@ -30,7 +29,7 @@ public sealed class ParserTicket(
             type = _type,
             created = _created,
             finished = _finished,
-            payload = Payload()
+            payload = _payload
         };
     }
     
@@ -68,14 +67,9 @@ public sealed class ParserTicket(
             return conn.ExecuteAsync(command);
         };
     }
-    
-    public void AddPayloadElement(string key, object value) => _payload.Add(key, value);
-     
-    private string Payload()
+
+    public static Guid[] ExtractIds(IEnumerable<ParserTicket> tickets)
     {
-        if (!string.IsNullOrWhiteSpace(_cachedPayload)) return _cachedPayload;
-        string payload = JsonSerializer.Serialize(_payload);
-        _cachedPayload = payload;
-        return _cachedPayload;
+        return tickets.Select(t => t._id).ToArray();
     }
 }

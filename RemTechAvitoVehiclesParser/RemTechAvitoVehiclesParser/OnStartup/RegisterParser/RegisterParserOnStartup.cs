@@ -1,4 +1,5 @@
-﻿using RemTechAvitoVehiclesParser.Database;
+﻿using System.Text.Json;
+using RemTechAvitoVehiclesParser.Database;
 using RemTechAvitoVehiclesParser.Models;
 
 namespace RemTechAvitoVehiclesParser.OnStartup.RegisterParser;
@@ -10,9 +11,9 @@ public sealed class RegisterParserOnStartup(NpgSqlParserTicketsStorage storage) 
 
     public async Task Invoke(string domain, string type)
     {
-        ParserTicket ticket = new(Guid.NewGuid(), Type, DateTime.UtcNow, null);
-        ticket.AddPayloadElement("domain", domain);
-        ticket.AddPayloadElement("type", type);
+        object payload = new { domain, type };
+        string json = JsonSerializer.Serialize(payload);
+        ParserTicket ticket = new(Guid.NewGuid(), Type, json, DateTime.UtcNow, null);
         await _storage.Add(ticket);
     }
 }
