@@ -10,10 +10,10 @@ public sealed class NpgSqlSession(NpgSqlDataSourceFactory factory) : IDisposable
     private NpgsqlConnection? _connection;
     private NpgsqlTransaction? _transaction;
 
-    public async Task ExecuteCommand(CommandDefinition command, CancellationToken ct = default)
+    public async Task<int> ExecuteCommand(CommandDefinition command, CancellationToken ct = default)
     {
         IDbConnection connection = await GetConnection(ct);
-        await connection.ExecuteAsync(command);
+        return await connection.ExecuteAsync(command);
     }
 
     public async Task ExecuteBulk(string sql, IEnumerable<object> parameters)

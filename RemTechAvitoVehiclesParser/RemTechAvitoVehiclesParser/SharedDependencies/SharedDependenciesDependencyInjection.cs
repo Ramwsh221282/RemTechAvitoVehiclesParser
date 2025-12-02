@@ -1,12 +1,28 @@
 ﻿using Quartz;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.RegisterParserCreationTicket;
-using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.RegisterParserCreationTicket.Decorators;
 using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
 using RemTechAvitoVehiclesParser.SharedDependencies.Quartz;
 using RemTechAvitoVehiclesParser.SharedDependencies.RabbitMq;
 using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 
 namespace RemTechAvitoVehiclesParser.SharedDependencies;
+
+public sealed class ClassNameLogEnricher : ILogEventEnricher
+{
+    private const string Pattern = "SourceContext";
+    
+    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+    {
+        if (logEvent.Properties.TryGetValue(Pattern, out var sourceContext))
+        {
+            string fullName = sourceContext.ToString().Trim('\"');
+            string exactTypeName = fullName.Split('.').Last();
+            logEvent.AddOrUpdateProperty(propertyFactory.CreateProperty(Pattern, exactTypeName));
+        }
+    }
+}
 
 public static class SharedDependenciesDependencyInjection
 {
@@ -22,6 +38,7 @@ public static class SharedDependenciesDependencyInjection
 
         private void RegisterNpgSql()
         {
+            Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
             services.AddOptions<NpgSqlOptions>().BindConfiguration(nameof(NpgSqlOptions));
             services.AddScoped<NpgSqlDataSourceFactory>();
             services.AddScoped<NpgSqlSession>();
@@ -46,7 +63,11 @@ public static class SharedDependenciesDependencyInjection
         
         private void RegisterLogger()
         {
-            services.AddSingleton<Serilog.ILogger>(new LoggerConfiguration().WriteTo.Console().CreateLogger());
+            Serilog.ILogger logger = new LoggerConfiguration()
+                .Enrich.With(new ClassNameLogEnricher())
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message}{NewLine}{Exception}")
+                .CreateLogger();
+            services.AddSingleton(logger);
         }
     }
 

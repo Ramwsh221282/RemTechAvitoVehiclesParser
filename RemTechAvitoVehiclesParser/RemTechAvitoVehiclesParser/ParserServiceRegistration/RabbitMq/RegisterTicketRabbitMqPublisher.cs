@@ -78,9 +78,13 @@ public sealed class RegisterTicketRabbitMqPublisher(RabbitMqConnectionFactory co
             cancellationToken: ct
         );
         
+        BasicProperties properties = new() { Persistent = true };
+        
         await channel.BasicPublishAsync(
             exchange: Exchange,
             routingKey: RoutingKey,
+            basicProperties: properties,
+            mandatory: true,
             body: payload,
             cancellationToken: ct);
     }

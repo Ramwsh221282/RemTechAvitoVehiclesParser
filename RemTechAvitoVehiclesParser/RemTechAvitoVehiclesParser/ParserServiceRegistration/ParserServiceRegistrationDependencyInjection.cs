@@ -21,6 +21,7 @@ public static class ParserServiceRegistrationDependencyInjection
             services.RegisterRegisteredTicketRabbitMqPublisher();
             services.RegisterPublishRegistrationTicketsJob();
             services.AddConfirmParserCreationTicketService();
+            services.RegisterRemoveConfirmiedRegistrationTickets();
         }
         
         private void AddRegisterParserCreationTicketCommand()
@@ -52,6 +53,11 @@ public static class ParserServiceRegistrationDependencyInjection
             services.AddScoped<RegisterTicketRabbitMqPublisher>();
         }
 
+        public void RegisterRemoveConfirmiedRegistrationTickets()
+        {
+            services.AddTransient<ICronScheduleJob, RemoveConfirmedRegistrationTicketsService>();
+        }
+        
         public void RegisterPublishRegistrationTicketsJob()
         {
             services.AddTransient<ICronScheduleJob, PublishPendingRegistrationTicketsToQueue>();

@@ -19,6 +19,8 @@ public sealed class ParserServiceRegistrationFixture : WebApplicationFactory<Rem
             s.ReconfigureDatabaseConfiguration(_dbContainer);
             s.ReconfigureRabbitMqConfiguration(_rabbitMq);
             s.AddHostedService<TestParserRegistrationTicketApprovalService>();
+            s.AddHostedService<TestConfirmPendingRegistrationTicketService>();
+            s.AddScoped<PublisherToParserRegistrationTicketApproval>();
             s.ReconfigureQuartzHostedService();
         });
     }

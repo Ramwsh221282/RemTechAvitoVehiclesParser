@@ -82,6 +82,17 @@ public sealed class NpgSqlRegisteredTicketsStorage(NpgSqlSession session)
         await session.ExecuteCommand(session.CreateCommand(sql, snapshot, _parametersFactory, ct));
     }
 
+    public async Task<int> DeleteMany(IEnumerable<RegisterParserServiceTicket> tickets)
+    {
+        const string sql = """
+                           DELETE FROM avito_parser_module.parser_tickets
+                           WHERE id = ANY(@ids);
+                           """;
+        Guid[] identifiers = tickets.Select(t => t.GetSnapshot().Id).ToArray();
+        CommandDefinition command = session.CreateCommand(sql, () => new { ids = identifiers });
+        return await session.ExecuteCommand(command);
+    }
+    
     public async Task UpdateMany<T>(
         IEnumerable<ISnapshotSource<T, RegisterParserServiceTicketSnapshot>> snapshotSources,
         CancellationToken ct = default)
@@ -128,7 +139,7 @@ public sealed class NpgSqlRegisteredTicketsStorage(NpgSqlSession session)
             filters.Add("was_sent IS TRUE");
         }
         
-        string filtersResult = filters.Count == 0 ? string.Empty : "WHERE " + string.Join("AND ", filters);
+        string filtersResult = filters.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", filters);
         return (parameters, filtersResult);
     }
 

@@ -8,7 +8,8 @@ using RemTechAvitoVehiclesParser.SharedDependencies.RabbitMq;
 
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.BackgroundTasks;
 
-[CronSchedule("*/10 * * * * ?")]
+[DisallowConcurrentExecution]
+[CronSchedule("*/5 * * * * ?")]
 public sealed class PublishPendingRegistrationTicketsToQueue(
     NpgSqlSession session,
     Serilog.ILogger logger,
@@ -23,53 +24,58 @@ public sealed class PublishPendingRegistrationTicketsToQueue(
     {
         _logger.Information("Starting publishing pending registration messages.");
         CancellationToken ct = context.CancellationToken;
-        await session.UseTransaction(ct: ct);
 
-        QueryRegisteredTicketArgs args = new(NotSentOnly: true, Limit: 50, WithLock: true);
-        RegisterParserServiceTicket[] pendingTickets = [..await _storage.GetTickets(args, ct)];
-        if (pendingTickets.Length == 0)
+        await using (session)
         {
-            _logger.Information("Stopping publishing pending registration messages. No pending messages.");
-            return;
-        }
+            await session.UseTransaction(ct: ct);
 
-        List<RegisterParserServiceTicket> succeeded = [];
-        foreach (RegisterParserServiceTicket pending in pendingTickets)
-        {
+            QueryRegisteredTicketArgs args = new(NotSentOnly: true, Limit: 50, WithLock: true, NotFinishedOnly: true);
+            RegisterParserServiceTicket[] pendingTickets = [..await _storage.GetTickets(args, ct)];
+            if (pendingTickets.Length == 0)
+            {
+                _logger.Information("Stopping publishing pending registration messages. No pending messages.");
+                return;
+            }
+
+            List<RegisterParserServiceTicket> succeeded = [];
+            foreach (RegisterParserServiceTicket pending in pendingTickets)
+            {
+                try
+                {
+                    await _publisher.Publish(pending, ct: ct);
+                    RegisterParserServiceTicket sent = pending.MarkSent();
+                    succeeded.Add(sent);
+                    LogSuccessPublishing(sent.GetSnapshot());
+                }
+                catch(Exception ex)
+                {
+                    LogFailurePublishing(ex);
+                }
+            }
+
+            await _storage.UpdateMany(succeeded, ct);
+        
             try
             {
-                await _publisher.Publish(pending, ct: ct);
-                RegisterParserServiceTicket sent = pending.MarkSent();
-                succeeded.Add(sent);
-                LogSuccessPublishing(sent.GetSnapshot());
+                await session.CommitTransaction(ct);
             }
             catch(Exception ex)
             {
-                LogFailurePublishing(ex);
+                _logger.Error(ex, "Error at commiting updating tickets in database.");
             }
-        }
-
-        await _storage.UpdateMany(succeeded, ct);
-        
-        try
-        {
-            await session.CommitTransaction(ct);
-        }
-        catch(Exception ex)
-        {
-            _logger.Error(ex, "Error at commiting updating tickets in database.");
         }
     }
 
     private void LogSuccessPublishing(RegisterParserServiceTicketSnapshot snapshot)
     {
-        object[] logProperties = [snapshot.Id, snapshot.Type, snapshot.Payload];
+        object[] logProperties = [snapshot.Id, snapshot.Type, snapshot.Payload, snapshot.WasSent];
         _logger.Information(
             """
             Published ticket info:
             Id: {Id}
             Type: {Type}
             Payload: {Payload}
+            Was sent: {WasSent}
             """, logProperties);
     }
 

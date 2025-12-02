@@ -10,6 +10,7 @@ builder.Services.RegisterSharedDependencies();
 WebApplication app = builder.Build();
 
 app.Services.ApplyDatabaseMigrations();
+
 await app.Services.RequireParserRegistration(
     ConstantsForMainApplicationCommunication.CurrentServiceDomain, 
     ConstantsForMainApplicationCommunication.CurrentServiceType);
