@@ -20,7 +20,7 @@ public sealed class ParserWorkStartFixture : WebApplicationFactory<RemTechAvitoV
             s.ReconfigureDatabaseConfiguration(_dbContainer);
             s.ReconfigureRabbitMqConfiguration(_rabbitMqContainer);
             s.AddScoped<TestStartParserWorkPublisher>();
-            s.DontUseQuartzServices();
+            s.ReconfigureQuartzHostedService();
         });
     }
 

@@ -55,23 +55,12 @@ public static class ParserServiceRegistrationDependencyInjection
 
         public void RegisterRemoveConfirmiedRegistrationTickets()
         {
-            services.AddTransient<ICronScheduleJob, RemoveConfirmedRegistrationTicketsService>();
+            services.AddSingleton<ICronScheduleJob, RemoveConfirmedRegistrationTicketsService>();
         }
         
         public void RegisterPublishRegistrationTicketsJob()
         {
-            services.AddTransient<ICronScheduleJob, PublishPendingRegistrationTicketsToQueue>();
-        }
-    }
-
-    extension(IServiceProvider serviceProvider)
-    {
-        public async Task RegisterParserCreationTicket(string domain, string type)
-        {
-            RegisterParserCreationTicketCommand command = new(domain, type);
-            await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
-            IRegisterParserCreationTicket registration = scope.ServiceProvider.GetRequiredService<IRegisterParserCreationTicket>();
-            await registration.Handle(command);
+            services.AddSingleton<ICronScheduleJob, PublishPendingRegistrationTicketsToQueue>();
         }
     }
 }

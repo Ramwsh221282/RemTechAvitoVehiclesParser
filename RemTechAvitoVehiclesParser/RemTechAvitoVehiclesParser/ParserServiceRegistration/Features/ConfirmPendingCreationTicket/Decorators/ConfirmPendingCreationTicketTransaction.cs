@@ -4,7 +4,7 @@ using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.ConfirmPendingCreationTicket.Decorators;
 
 public sealed class ConfirmPendingCreationTicketTransaction(
-    NpgSqlSession session,
+    IPostgreSqlAdapter session,
     IConfirmPendingCreationTicket origin
 ) :
     IConfirmPendingCreationTicket

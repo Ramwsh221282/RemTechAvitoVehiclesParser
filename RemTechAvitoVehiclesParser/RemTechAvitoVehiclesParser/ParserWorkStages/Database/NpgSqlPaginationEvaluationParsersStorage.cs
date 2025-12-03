@@ -27,7 +27,7 @@ namespace RemTechAvitoVehiclesParser.ParserWorkStages.Database;
 //     ON DELETE CASCADE 
 //  );
 
-public sealed class NpgSqlPaginationEvaluationParsersStorage(NpgSqlSession session)
+public sealed class NpgSqlPaginationEvaluationParsersStorage(IPostgreSqlAdapter session)
 {
     public async Task Save<T>(
         ISnapshotSource<T, PaginationEvaluationParserSnapshot> snapshotSource,
@@ -103,6 +103,31 @@ public sealed class NpgSqlPaginationEvaluationParsersStorage(NpgSqlSession sessi
             : Maybe<PaginationEvaluationParser>.Some(readingScope.First().Value);
     }
     
+    public async Task UpdateLink<T>(
+        ISnapshotSource<T, PaginationEvaluationParserLinkSnapshot> linkSnapshotSource,
+        Guid parserId,
+        CancellationToken ct = default)
+        where T : class
+    {
+        const string sql = """
+                           UPDATE avito_parser_module.pagination_evaluating_parser_links
+                           SET was_processed = @was_processed,
+                               current_page = @current_page,
+                               max_page = @max_page
+                           WHERE id = @id
+                           """;
+        PaginationEvaluationParserLinkSnapshot linkSnapshot = linkSnapshotSource.GetSnapshot();
+        object parameters = CreateParserLinkParameters(linkSnapshot, parserId);
+        CommandDefinition command = session.CreateCommand(sql, parameters, ct);
+        await session.ExecuteCommand(command, ct);
+    }
+    
+    public async Task UpdateLink<T>(
+        ISnapshotSource<T, PaginationEvaluationParserLinkSnapshot> linkSnapshotSource,
+        ISnapshotSource<T, PaginationEvaluationParserSnapshot> parserSnapshotSource,
+        CancellationToken ct = default)
+        where T : class => await UpdateLink(linkSnapshotSource, parserSnapshotSource.GetSnapshot().Id, ct);
+    
     private async Task SaveLinks(PaginationEvaluationParserSnapshot snapshot, CancellationToken ct)
     {
         const string sql = """
@@ -131,6 +156,26 @@ public sealed class NpgSqlPaginationEvaluationParsersStorage(NpgSqlSession sessi
             parameters.Add("@parserId", query.ParserId.Value, DbType.Guid);
         }
 
+        if (query.LinksWithoutCurrentPage)
+        {
+            filters.Add("l.current_page is null");
+        }
+
+        if (query.LinksWithoutMaxPage)
+        {
+            filters.Add("l.max_page is null");
+        }
+
+        if (query.LinksWithMaxPage)
+        {
+            filters.Add("l.max_page is not null");
+        }
+
+        if (query.LinksWithCurrentPage)
+        {
+            filters.Add("l.current_page is not null");
+        }
+
         string sql = filters.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", filters);
         return (parameters, sql);
     }
@@ -144,7 +189,20 @@ public sealed class NpgSqlPaginationEvaluationParsersStorage(NpgSqlSession sessi
             type = snapshot.Type
         };
     }
-
+        
+    private static object CreateParserLinkParameters(PaginationEvaluationParserLinkSnapshot linkSnapshot, Guid parserId)
+    {
+        return new
+        {
+            id = linkSnapshot.Id,
+            parser_id = parserId,
+            url = linkSnapshot.Url,
+            was_processed = linkSnapshot.WasProcessed,
+            current_page = linkSnapshot.CurrentPage,
+            max_page = linkSnapshot.MaxPage,
+        };
+    }
+    
     private static object CreateParserLinkParameters(
         PaginationEvaluationParserLinkSnapshot linkSnapshot, 
         PaginationEvaluationParserSnapshot parserSnapshot)

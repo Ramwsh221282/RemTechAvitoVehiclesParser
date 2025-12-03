@@ -1,24 +1,21 @@
-using System.Data;
+﻿using System.Data;
 using Dapper;
 using Npgsql;
 using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
 
 namespace RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
 
-public sealed class NpgSqlSession(NpgSqlDataSourceFactory factory) : IPostgreSqlAdapter
+public sealed class ScopedNpgSqlSession(NpgsqlConnection connection) : IPostgreSqlAdapter
 {
-    private NpgsqlConnection? _connection;
     private NpgsqlTransaction? _transaction;
 
     public async Task<int> ExecuteCommand(CommandDefinition command, CancellationToken ct = default)
     {
-        IDbConnection connection = await GetConnection(ct);
         return await connection.ExecuteAsync(command);
     }
 
     public async Task ExecuteBulk(string sql, IEnumerable<object> parameters)
     {
-        IDbConnection connection = await GetConnection(CancellationToken.None);
         await connection.ExecuteAsync(sql, parameters, transaction: _transaction);
     }
     
@@ -34,7 +31,6 @@ public sealed class NpgSqlSession(NpgSqlDataSourceFactory factory) : IPostgreSql
 
     public async Task<IDataReader> GetRowsReader(CommandDefinition command, CancellationToken ct = default)
     {
-        IDbConnection connection = await GetConnection(ct);
         return await connection.ExecuteReaderAsync(command);
     }
     
@@ -71,7 +67,6 @@ public sealed class NpgSqlSession(NpgSqlDataSourceFactory factory) : IPostgreSql
     
     public async Task<Maybe<T>> QuerySingle<T>(CommandDefinition command, CancellationToken ct = default) where T : class
     {
-        IDbConnection connection = await GetConnection(ct);
         T? element = await connection.QueryFirstOrDefaultAsync<T>(command);
         return Maybe<T>.Resolve(element);
     }
@@ -79,14 +74,12 @@ public sealed class NpgSqlSession(NpgSqlDataSourceFactory factory) : IPostgreSql
     public async Task<IEnumerable<T>> QueryMany<T>(CommandDefinition command, CancellationToken ct = default)
         where T : class
     {
-        IDbConnection connection = await GetConnection(ct);
         IEnumerable<T> elements = await connection.QueryAsync<T>(command);
         return elements;
     }
     
     public async Task UseTransaction(CancellationToken ct = default)
     {
-        NpgsqlConnection connection = await GetConnection(ct);
         _transaction ??= await connection.BeginTransactionAsync(ct);
     }
 
@@ -107,19 +100,19 @@ public sealed class NpgSqlSession(NpgSqlDataSourceFactory factory) : IPostgreSql
     public void Dispose()
     {
         _transaction?.Dispose();
-        _connection?.Dispose();
+        connection.Dispose();
     }
 
     public async ValueTask DisposeAsync()
     {
         if (_transaction != null) await _transaction.DisposeAsync();
-        if (_connection != null) await _connection.DisposeAsync();
+        await connection.DisposeAsync();
     }
-
+    
     private object? CreateParameters<T>(
         T? parametersSource,
         Func<T, object>? parametersFactory
-        ) where T : class
+    ) where T : class
     {
         return (parametersSource, parametersFactory) switch
         {
@@ -130,10 +123,5 @@ public sealed class NpgSqlSession(NpgSqlDataSourceFactory factory) : IPostgreSql
             (not null, not null) => parametersFactory(parametersSource),
             (null, null) => null,
         };
-    }
-    
-    private async Task<NpgsqlConnection> GetConnection(CancellationToken ct)
-    {
-        return _connection ??= await factory.GetConnection(ct);
     }
 }

@@ -11,13 +11,11 @@ namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.BackgroundTasks;
 [DisallowConcurrentExecution]
 [CronSchedule("*/5 * * * * ?")]
 public sealed class PublishPendingRegistrationTicketsToQueue(
-    NpgSqlSession session,
     Serilog.ILogger logger,
+    NpgSqlDataSourceFactory dataSourceFactory,
     RabbitMqConnectionFactory factory
     ) : ICronScheduleJob
 {
-    private readonly RegisterTicketRabbitMqPublisher _publisher = new(factory);
-    private readonly NpgSqlRegisteredTicketsStorage _storage = new(session);
     private readonly Serilog.ILogger _logger = logger.ForContext<PublishPendingRegistrationTicketsToQueue>();
     
     public async Task Execute(IJobExecutionContext context)
@@ -25,12 +23,15 @@ public sealed class PublishPendingRegistrationTicketsToQueue(
         _logger.Information("Starting publishing pending registration messages.");
         CancellationToken ct = context.CancellationToken;
 
-        await using (session)
+        await using (IPostgreSqlAdapter session = await dataSourceFactory.CreateAdapter(context.CancellationToken))
         {
+            RegisterTicketRabbitMqPublisher publisher = new(factory);
+            NpgSqlRegisteredTicketsStorage storage = new(session);
+            
             await session.UseTransaction(ct: ct);
 
             QueryRegisteredTicketArgs args = new(NotSentOnly: true, Limit: 50, WithLock: true, NotFinishedOnly: true);
-            RegisterParserServiceTicket[] pendingTickets = [..await _storage.GetTickets(args, ct)];
+            RegisterParserServiceTicket[] pendingTickets = [..await storage.GetTickets(args, ct)];
             if (pendingTickets.Length == 0)
             {
                 _logger.Information("Stopping publishing pending registration messages. No pending messages.");
@@ -42,7 +43,7 @@ public sealed class PublishPendingRegistrationTicketsToQueue(
             {
                 try
                 {
-                    await _publisher.Publish(pending, ct: ct);
+                    await publisher.Publish(pending, ct: ct);
                     RegisterParserServiceTicket sent = pending.MarkSent();
                     succeeded.Add(sent);
                     LogSuccessPublishing(sent.GetSnapshot());
@@ -53,7 +54,7 @@ public sealed class PublishPendingRegistrationTicketsToQueue(
                 }
             }
 
-            await _storage.UpdateMany(succeeded, ct);
+            await storage.UpdateMany(succeeded, ct);
         
             try
             {

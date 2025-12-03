@@ -17,7 +17,6 @@ public sealed class MaxAvitoPage
     public static async Task<MaxAvitoPage> FromPaginationElements(IElementHandle[] elements)
     {
         int maxPage = 0;
-        IElementHandle lastElement = elements[^1];
         foreach (IElementHandle pageElements in elements)
         {
             Maybe<IElementHandle> pageNumberElement = await pageElements.GetElementRetriable("span.styles-module-text-Z0vDE");

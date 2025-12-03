@@ -1,6 +1,8 @@
-﻿using RemTechAvitoVehiclesParser.ParserWorkStages.Database;
+﻿using RemTechAvitoVehiclesParser.ParserWorkStages.BackgroundTasks;
+using RemTechAvitoVehiclesParser.ParserWorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.Features.SaveEvaluationParserWorkStage;
 using RemTechAvitoVehiclesParser.ParserWorkStages.Features.SaveEvaluationParserWorkStage.Decorators;
+using RemTechAvitoVehiclesParser.SharedDependencies.Quartz;
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages;
 
@@ -12,6 +14,8 @@ public static class ParserWorkStagesDependencyInjection
         {
             services.RegisterStorage();
             services.AddSaveEvaluationParserWorkStageCommand();
+            services.RegisterPaginationEvaluationBackgroundJob();
+            services.RegisterSwitchToCatalogueStageBackgroundJob();
         }
         
         public void RegisterStorage()
@@ -20,6 +24,16 @@ public static class ParserWorkStagesDependencyInjection
             services.AddScoped<NpgSqlPaginationEvaluationParsersStorage>();
         }
 
+        public void RegisterPaginationEvaluationBackgroundJob()
+        {
+            services.AddSingleton<ICronScheduleJob, CreatePaginationEvaluationBackgroundTask>();
+        }
+
+        public void RegisterSwitchToCatalogueStageBackgroundJob()
+        {
+            services.AddSingleton<ICronScheduleJob, SwitchToCatalogueStageBackgroundTask>();
+        }
+        
         public void AddSaveEvaluationParserWorkStageCommand()
         {
             services.AddScoped<ISaveEvaluationParserWorkStage, SaveEvaluationParserWorkStage>();

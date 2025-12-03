@@ -4,7 +4,7 @@ using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.Features.SaveEvaluationParserWorkStage.Decorators;
 
 public sealed class SaveEvaluationParserWorkStageTransaction(
-    NpgSqlSession session,
+    IPostgreSqlAdapter session,
     ISaveEvaluationParserWorkStage origin
 ) : ISaveEvaluationParserWorkStage
 {

@@ -40,8 +40,8 @@ public static class SharedDependenciesDependencyInjection
         {
             Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
             services.AddOptions<NpgSqlOptions>().BindConfiguration(nameof(NpgSqlOptions));
-            services.AddScoped<NpgSqlDataSourceFactory>();
-            services.AddScoped<NpgSqlSession>();
+            services.AddSingleton<NpgSqlDataSourceFactory>();
+            services.AddScoped<IPostgreSqlAdapter, NpgSqlSession>();
             services.AddSingleton<DbUpgrader>();
         }
 

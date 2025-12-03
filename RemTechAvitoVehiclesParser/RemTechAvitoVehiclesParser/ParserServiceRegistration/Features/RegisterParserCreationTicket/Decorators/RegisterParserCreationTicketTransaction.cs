@@ -4,7 +4,7 @@ using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.RegisterParserCreationTicket.Decorators;
 
 public sealed class RegisterParserCreationTicketTransaction(
-    NpgSqlSession session, 
+    IPostgreSqlAdapter session, 
     IRegisterParserCreationTicket origin) : 
     IRegisterParserCreationTicket
 {

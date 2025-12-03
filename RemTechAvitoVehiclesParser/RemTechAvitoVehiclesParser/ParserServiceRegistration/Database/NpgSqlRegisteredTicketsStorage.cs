@@ -16,7 +16,7 @@ namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Database;
 //     was_sent boolean,
 //     finished timestamptz
 // );
-public sealed class NpgSqlRegisteredTicketsStorage(NpgSqlSession session)
+public sealed class NpgSqlRegisteredTicketsStorage(IPostgreSqlAdapter session)
 {
     private static Func<RegisterParserServiceTicketSnapshot, object> _parametersFactory = CreateParametersFromSnapshot;
 

@@ -7,7 +7,7 @@ using RemTechAvitoVehiclesParser.SharedDependencies.Utilities.Snapshots;
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.Database;
 
-public sealed class NpgSqlParserWorkStagesStorage(NpgSqlSession session)
+public sealed class NpgSqlParserWorkStagesStorage(IPostgreSqlAdapter session)
 {
     public async Task Save<T>(ISnapshotSource<T, ParserWorkStageSnapshot> snapshotSource, CancellationToken ct = default)
         where T : class
@@ -23,6 +23,20 @@ public sealed class NpgSqlParserWorkStagesStorage(NpgSqlSession session)
         await session.ExecuteCommand(command);
     }
 
+    public async Task Update<T>(ISnapshotSource<T, ParserWorkStageSnapshot> snapshotSource, CancellationToken ct = default)
+        where T : class
+    {
+        const string sql = """
+                           UPDATE avito_parser_module.work_stages
+                           SET name = @name,
+                               finished = @finished
+                           WHERE id = @id;
+                           """;
+        ParserWorkStageSnapshot snapshot = snapshotSource.GetSnapshot();
+        CommandDefinition command = session.CreateCommand(sql, snapshot, CreateParameters, ct);
+        await session.ExecuteCommand(command);
+    }
+    
     public async Task<Maybe<ParserWorkStage>> GetWorkStage(ParserWorkStageQuery query, CancellationToken ct = default)
     {
         (DynamicParameters parameters, string filterSql) = FilterClause(query);
