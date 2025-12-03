@@ -15,7 +15,7 @@ public sealed class TestStartParserWorkPublisher(
     private const string Type = "topic";
     private static readonly string RoutingKey = $"start.{ConstantsForMainApplicationCommunication.CurrentServiceDomain}.{ConstantsForMainApplicationCommunication.CurrentServiceType}";
     
-    public async Task Publish(Guid id)
+    public async Task Publish(Guid id, string domain, string type, IEnumerable<(Guid, string)> links)
     {
         IConnection connection = await connectionFactory.GetConnection();
         CreateChannelOptions options = new(
@@ -42,7 +42,14 @@ public sealed class TestStartParserWorkPublisher(
 
         object payload = new
         {
-            parser_id = id
+            parser_id = id,
+            parser_domain = domain,
+            parser_type = type,
+            parser_links = links.Select(l => new
+            {
+                id = l.Item1,
+                url = l.Item2,
+            })
         };
 
         string json = JsonSerializer.Serialize(payload);

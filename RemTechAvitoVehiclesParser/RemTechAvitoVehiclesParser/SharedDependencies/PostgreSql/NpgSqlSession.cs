@@ -32,6 +32,12 @@ public sealed class NpgSqlSession(NpgSqlDataSourceFactory factory) : IDisposable
         return command;
     }
 
+    public async Task<IDataReader> GetRowsReader(CommandDefinition command, CancellationToken ct = default)
+    {
+        IDbConnection connection = await GetConnection(ct);
+        return await connection.ExecuteReaderAsync(command);
+    }
+    
     public CommandDefinition CreateCommand(
         string sql,
         object parameters,

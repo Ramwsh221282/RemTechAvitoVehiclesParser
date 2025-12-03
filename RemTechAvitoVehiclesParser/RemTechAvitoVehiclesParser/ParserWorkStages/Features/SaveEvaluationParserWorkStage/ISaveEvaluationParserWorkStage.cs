@@ -4,5 +4,7 @@ namespace RemTechAvitoVehiclesParser.ParserWorkStages.Features.SaveEvaluationPar
 
 public interface ISaveEvaluationParserWorkStage
 {
-    Task<ParserWorkStageSnapshot> Handle(SaveEvaluationParserWorkStageCommand command, CancellationToken ct = default);
+    Task<(ParserWorkStageSnapshot stage, PaginationEvaluationParserSnapshot parser)> Handle(
+        SaveEvaluationParserWorkStageCommand command, 
+        CancellationToken ct = default);
 }

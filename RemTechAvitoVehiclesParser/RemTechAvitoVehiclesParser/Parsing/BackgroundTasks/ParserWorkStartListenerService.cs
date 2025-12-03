@@ -68,10 +68,20 @@ public sealed class ParserWorkStartListenerService(
             {
                 string json = Encoding.UTF8.GetString(@event.Body.ToArray());
                 using JsonDocument document = JsonDocument.Parse(json);
+                
                 Guid id = document.RootElement.GetProperty("parser_id").GetGuid();
+                string domain = document.RootElement.GetProperty("parser_domain").GetString()!;
+                string type = document.RootElement.GetProperty("parser_type").GetString()!;
+                List<SaveEvaluationParserWorkLinkArg> links = [];
+                foreach (JsonElement link in document.RootElement.GetProperty("parser_links").EnumerateArray())
+                {
+                    Guid linkId = link.GetProperty("id").GetGuid();
+                    string linkUrl = link.GetProperty("url").GetString()!;
+                    links.Add(new SaveEvaluationParserWorkLinkArg(linkId, linkUrl));
+                }
 
                 await using AsyncServiceScope scope = sp.CreateAsyncScope();
-                SaveEvaluationParserWorkStageCommand command = new(id);
+                SaveEvaluationParserWorkStageCommand command = new(id, domain, type, links);
                 ISaveEvaluationParserWorkStage saveEvaluationWorkStage =
                     scope.ServiceProvider.GetRequiredService<ISaveEvaluationParserWorkStage>();
                 await saveEvaluationWorkStage.Handle(command);

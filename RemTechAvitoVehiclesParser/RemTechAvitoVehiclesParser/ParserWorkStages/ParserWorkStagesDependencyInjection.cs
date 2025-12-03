@@ -17,12 +17,14 @@ public static class ParserWorkStagesDependencyInjection
         public void RegisterStorage()
         {
             services.AddScoped<NpgSqlParserWorkStagesStorage>();
+            services.AddScoped<NpgSqlPaginationEvaluationParsersStorage>();
         }
 
         public void AddSaveEvaluationParserWorkStageCommand()
         {
             services.AddScoped<ISaveEvaluationParserWorkStage, SaveEvaluationParserWorkStage>();
             services.Decorate<ISaveEvaluationParserWorkStage, SaveEvaluationParserWorkStageLogging>();
+            services.Decorate<ISaveEvaluationParserWorkStage, SaveEvaluationParserWorkStageTransaction>();
         }
     }
 }

@@ -9,8 +9,14 @@ public static class ParsingDependencyInjection
         public void RegisterParsingContext()
         {
             services.AddParserWorkStartEventListener();
+            services.AddBrowserFactory();
         }
 
+        public void AddBrowserFactory()
+        {
+            services.AddSingleton<BrowserFactory>();
+        }
+        
         public void AddParserWorkStartEventListener()
         {
             services.AddHostedService<ParserWorkStartListenerService>();

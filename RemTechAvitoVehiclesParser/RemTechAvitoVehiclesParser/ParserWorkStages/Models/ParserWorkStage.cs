@@ -50,12 +50,23 @@ public class ParserWorkStage(Guid id, string name, DateTime created, DateTime? f
         return new ParserWorkStageSnapshot(_id, _name, _created, _finished);
     }
 
-    public sealed class EvaluationWorkStage(ParserWorkStage stage) : ParserWorkStage(stage, name: "EVALUATION")
+    public sealed class EvaluationWorkStage(ParserWorkStage stage) 
+        : ParserWorkStage(stage, name: WorkStageConstants.EvaluationStageName)
     {
         public EvaluationWorkStage(Guid id) 
             : this(new ParserWorkStage(id, "EVALUATION", DateTime.UtcNow, null)) { }
     }
     
-    public sealed class CatalogueWorkStage(ParserWorkStage stage) : ParserWorkStage(stage, name: "CATALOGUE");
-    public sealed class ConcreteItemWorkStage(ParserWorkStage stage) : ParserWorkStage(stage, name: "CONCRETE");
+    public sealed class CatalogueWorkStage(ParserWorkStage stage) 
+        : ParserWorkStage(stage, name: WorkStageConstants.CatalogueStageName);
+    
+    public sealed class ConcreteItemWorkStage(ParserWorkStage stage) 
+        : ParserWorkStage(stage, name: WorkStageConstants.ConcreteItemStageName);
+}
+
+public static class WorkStageConstants
+{
+    public const string EvaluationStageName = "EVALUATION";
+    public const string CatalogueStageName = "CATALOGUE";
+    public const string ConcreteItemStageName = "CONCRETE";
 }
