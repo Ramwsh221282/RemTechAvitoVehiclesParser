@@ -54,6 +54,7 @@ public sealed class NpgSqlPaginationEvaluationParsersStorage(IPostgreSqlAdapter 
     {
         (DynamicParameters parameters, string filterSql) = WhereClause(query);
         string lockClause = LockClause(query);
+        string linksLimitClause = LinksLimitClause(query);
         string sql = $"""
                            SELECT 
                            l.id as link_id,
@@ -68,6 +69,7 @@ public sealed class NpgSqlPaginationEvaluationParsersStorage(IPostgreSqlAdapter 
                            INNER JOIN avito_parser_module.pagination_evaluating_parsers p ON l.parser_id = p.id
                            {filterSql}
                            {lockClause}
+                           {linksLimitClause}
                            """;
         CommandDefinition command = session.CreateCommand(sql, parameters, ct);
         using IDataReader reader = await session.GetRowsReader(command, ct);
@@ -127,6 +129,11 @@ public sealed class NpgSqlPaginationEvaluationParsersStorage(IPostgreSqlAdapter 
         ISnapshotSource<T, PaginationEvaluationParserSnapshot> parserSnapshotSource,
         CancellationToken ct = default)
         where T : class => await UpdateLink(linkSnapshotSource, parserSnapshotSource.GetSnapshot().Id, ct);
+
+    private static string LinksLimitClause(PaginationEvaluationParsersQuery query)
+    {
+        return query.LinksLimit.HasValue ? $"LIMIT {query.LinksLimit.Value}" : string.Empty;
+    }
     
     private async Task SaveLinks(PaginationEvaluationParserSnapshot snapshot, CancellationToken ct)
     {
@@ -174,6 +181,16 @@ public sealed class NpgSqlPaginationEvaluationParsersStorage(IPostgreSqlAdapter 
         if (query.LinksWithCurrentPage)
         {
             filters.Add("l.current_page is not null");
+        }
+
+        if (query.OnlyNotProcessedLinks)
+        {
+            filters.Add("l.was_processed is FALSE");
+        }
+
+        if (query.OnlyProcessedLinks)
+        {
+            filters.Add("l.was_processed is TRUE");
         }
 
         string sql = filters.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", filters);

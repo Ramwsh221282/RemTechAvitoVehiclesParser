@@ -6,4 +6,7 @@ public sealed record PaginationEvaluationParsersQuery(
     bool LinksWithoutCurrentPage = false,
     bool LinksWithoutMaxPage = false,
     bool LinksWithCurrentPage = false,
-    bool LinksWithMaxPage = false);
+    bool LinksWithMaxPage = false,
+    bool OnlyNotProcessedLinks = false,
+    bool OnlyProcessedLinks = false,
+    int? LinksLimit = 50);

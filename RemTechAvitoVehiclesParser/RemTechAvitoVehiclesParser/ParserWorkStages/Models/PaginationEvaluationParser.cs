@@ -18,6 +18,8 @@ public sealed class PaginationEvaluationParser(
         _links.Add(link);
     }
     
+    public PaginationEvaluationParserLink[] Links() => [.._links];
+    
     public PaginationEvaluationParserSnapshot GetSnapshot()
     {
         return new PaginationEvaluationParserSnapshot(

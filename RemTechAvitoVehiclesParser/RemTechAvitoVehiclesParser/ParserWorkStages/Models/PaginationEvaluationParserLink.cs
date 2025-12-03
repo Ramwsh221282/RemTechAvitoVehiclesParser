@@ -14,6 +14,62 @@ public sealed class PaginationEvaluationParserLink(
     private readonly bool _wasProcessed = wasProcessed;
     private readonly int? _currentPage = currentPage;
     private readonly int? _maxPage = maxPage;
+
+    public PaginationEvaluationParserLink MarkProcessed()
+    {
+        if (_wasProcessed)
+            throw new InvalidOperationException(
+                """
+                Cannot mark link as processed.
+                Link is already processed.
+                """
+                );
+        return new PaginationEvaluationParserLink(this, wasProcessed: true);
+    }
+
+    public CataloguePageUrl[] BuildCataloguePageUrls()
+    {
+        if (!_currentPage.HasValue)
+            throw new InvalidOperationException(
+                """
+                Cannot build catalogue page urls from parser link.
+                Parser link has no current page initialized.
+                """
+                );
+        
+        if (!_maxPage.HasValue)
+            throw new InvalidOperationException(
+                """
+                Cannot build catalogue page urls from parser link.
+                Parser link has no max page initialized.
+                """
+            );
+        
+        int pageCounter = _currentPage.Value;
+        List<CataloguePageUrl> urls = [];
+        while (pageCounter <= _maxPage.Value)
+        {
+            Guid id = Guid.NewGuid();
+            string urlValue = $"{_url}?p={pageCounter}";
+            urls.Add(new CataloguePageUrl(id: id, linkId: _id, url: urlValue, processed: false, retryCount: 0));
+            pageCounter++;
+        }
+        
+        return urls.ToArray();
+    }
+    
+    public PaginationEvaluationParserLink IncrementCurrentPage()
+    {
+        if (!_currentPage.HasValue)
+            throw new InvalidOperationException(
+                """
+                Cannot increment current page.
+                Current page and max page are not initialized.
+                """
+            );
+        int nextCurrentPage = _currentPage.Value + 1;
+        return new PaginationEvaluationParserLink(this, currentPage: nextCurrentPage);
+    }
     
     public PaginationEvaluationParserLink AddPagination(int currentPage, int maxPage)
     {

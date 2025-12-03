@@ -16,14 +16,21 @@ public static class ParserWorkStagesDependencyInjection
             services.AddSaveEvaluationParserWorkStageCommand();
             services.RegisterPaginationEvaluationBackgroundJob();
             services.RegisterSwitchToCatalogueStageBackgroundJob();
+            services.AddProcessParserUrlsBackgroundTask();
         }
         
         public void RegisterStorage()
         {
             services.AddScoped<NpgSqlParserWorkStagesStorage>();
             services.AddScoped<NpgSqlPaginationEvaluationParsersStorage>();
+            services.AddScoped<NpgSqlCataloguePageUrlsStorage>();
         }
 
+        public void AddProcessParserUrlsBackgroundTask()
+        {
+            // services.AddSingleton<ICronScheduleJob, ProcessParserUrlsBackgroundTask>();
+        }
+        
         public void RegisterPaginationEvaluationBackgroundJob()
         {
             services.AddSingleton<ICronScheduleJob, CreatePaginationEvaluationBackgroundTask>();
