@@ -25,42 +25,40 @@ public sealed class CreatePaginationEvaluationBackgroundTask(
     {
         CancellationToken ct = context.CancellationToken;
         _logger.Information("Starting create pagination evaluation background job.");
-        await using (IPostgreSqlAdapter session = await dataSourceFactory.CreateAdapter(ct))
+        await using IPostgreSqlAdapter session = await dataSourceFactory.CreateAdapter(ct);
+        await session.UseTransaction(ct);
+        NpgSqlPaginationEvaluationParsersStorage paginations = new(session);
+        NpgSqlParserWorkStagesStorage workStages = new(session);
+            
+            
+        ParserWorkStageQuery stageQuery = new(Name: WorkStageConstants.EvaluationStageName, WithLock: true);
+        Maybe<ParserWorkStage> evaluationStage = await workStages.GetWorkStage(stageQuery, ct);
+        if (!evaluationStage.HasValue)
         {
-            await session.UseTransaction(ct);
-            NpgSqlPaginationEvaluationParsersStorage paginations = new(session);
-            NpgSqlParserWorkStagesStorage workStages = new(session);
+            _logger.Information("No evaluation work stage exists. Stopping job.");
+            return;
+        }
+            
+        Guid stageId = evaluationStage.Value.GetSnapshot().Id;
+        PaginationEvaluationParsersQuery parsersQuery = new(ParserId: stageId, LinksWithoutCurrentPage: true, LinksWithoutMaxPage: true, WithLock: true);
+        Maybe<PaginationEvaluationParser> evaluationParser = await paginations.GetParser(parsersQuery, ct);
+        if (!evaluationParser.HasValue)
+        {
+            _logger.Information("No pagination evaluation parser exists. Stopping job.");
+            return;
+        }
             
             
-            ParserWorkStageQuery stageQuery = new(Name: WorkStageConstants.EvaluationStageName, WithLock: true);
-            Maybe<ParserWorkStage> evaluationStage = await workStages.GetWorkStage(stageQuery, ct);
-            if (!evaluationStage.HasValue)
-            {
-                _logger.Information("No evaluation work stage exists. Stopping job.");
-                return;
-            }
-            
-            Guid stageId = evaluationStage.Value.GetSnapshot().Id;
-            PaginationEvaluationParsersQuery parsersQuery = new(ParserId: stageId, LinksWithoutCurrentPage: true, LinksWithoutMaxPage: true, WithLock: true);
-            Maybe<PaginationEvaluationParser> evaluationParser = await paginations.GetParser(parsersQuery, ct);
-            if (!evaluationParser.HasValue)
-            {
-                _logger.Information("No pagination evaluation parser exists. Stopping job.");
-                return;
-            }
-            
-            
-            _logger.Information("Evaluation work stage and parser detected. Starting evaluating pagination.");
-            await ProcessPaginationEvaluationForUrls(paginations, evaluationParser.Value.GetSnapshot());
+        _logger.Information("Evaluation work stage and parser detected. Starting evaluating pagination.");
+        await ProcessPaginationEvaluationForUrls(paginations, evaluationParser.Value.GetSnapshot());
 
-            try
-            {
-                await session.CommitTransaction(ct);
-            }
-            catch(Exception ex)
-            {
-                _logger.Error(ex, "Failed to evaluate pagination for URLs. Transaction error.");
-            }
+        try
+        {
+            await session.CommitTransaction(ct);
+        }
+        catch(Exception ex)
+        {
+            _logger.Error(ex, "Failed to evaluate pagination for URLs. Transaction error.");
         }
     }
 

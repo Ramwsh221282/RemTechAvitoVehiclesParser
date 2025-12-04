@@ -50,7 +50,7 @@ public sealed class PaginationEvaluationParserLink(
         while (pageCounter <= _maxPage.Value)
         {
             Guid id = Guid.NewGuid();
-            string urlValue = $"{_url}?p={pageCounter}";
+            string urlValue = $"{_url}?page={pageCounter}";
             urls.Add(new CataloguePageUrl(id: id, linkId: _id, url: urlValue, processed: false, retryCount: 0));
             pageCounter++;
         }
@@ -101,8 +101,8 @@ public sealed class PaginationEvaluationParserLink(
         : this(
             origin._id,
             origin._url,
-            wasProcessed.HasValue ? wasProcessed.Value : origin._wasProcessed,
-            currentPage.HasValue ? currentPage.Value : origin._currentPage,
-            maxPage.HasValue ? maxPage.Value : origin._maxPage
+            wasProcessed ?? origin._wasProcessed,
+            currentPage ?? origin._currentPage,
+            maxPage ?? origin._maxPage
         ) { }
 }

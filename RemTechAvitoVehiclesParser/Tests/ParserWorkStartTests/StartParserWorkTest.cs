@@ -29,7 +29,7 @@ public sealed class StartParserWorkTest(ParserWorkStartFixture fixture) : IClass
         bool hasCatalogueStage = await EnsureHasCatalogueStage(id);
         Assert.True(hasPaginationEvaluated);
         Assert.True(hasCatalogueStage);
-        await Task.Delay(TimeSpan.FromMinutes(5));
+        await Task.Delay(TimeSpan.FromHours(1));
     }
 
     private async Task PublishMessageToStartParserWork(Guid id, string domain, string type, IEnumerable<(Guid, string)> links)

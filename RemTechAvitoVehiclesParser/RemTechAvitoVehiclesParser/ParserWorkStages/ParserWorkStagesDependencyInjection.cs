@@ -28,7 +28,7 @@ public static class ParserWorkStagesDependencyInjection
 
         public void AddProcessParserUrlsBackgroundTask()
         {
-            // services.AddSingleton<ICronScheduleJob, ProcessParserUrlsBackgroundTask>();
+            services.AddSingleton<ICronScheduleJob, ProcessParserUrlsBackgroundTask>();
         }
         
         public void RegisterPaginationEvaluationBackgroundJob()
