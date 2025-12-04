@@ -31,16 +31,6 @@ public static class PageActions
             await page.EvaluateExpressionAsync("window.scrollTo(0, 0)");
         }
         
-        public async Task Invoke(Func<IPage, Task> invoke)
-        {
-            await invoke(page);
-        }
-        
-        public async Task<U> Invoke<U>(Func<IPage, Task<U>> invoke)
-        {
-            return await invoke(page);
-        }
-        
         public async Task NavigatePage(string url)
         {
             WaitUntilNavigation waitUntil = WaitUntilNavigation.DOMContentLoaded;

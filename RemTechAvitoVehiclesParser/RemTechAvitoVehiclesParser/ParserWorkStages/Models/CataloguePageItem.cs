@@ -18,7 +18,7 @@ public sealed class CataloguePageItem(
 
     public CataloguePageItemSnapshot GetSnapshot()
     {
-        return new CataloguePageItemSnapshot(
+        return new(
             Id: _id, 
             CatalogueUrlId: _catalogueUrlId, 
             Payload: _payload,
@@ -26,6 +26,44 @@ public sealed class CataloguePageItem(
             RetryCount: _retryCount);
     }
 
+    public CataloguePageItem IncreaseRetry()
+    {
+        int nextRetryCount = _retryCount + 1;
+        return new CataloguePageItem(this, retryCount: nextRetryCount);
+    }
+
+    public CataloguePageItem MarkProcessed()
+    {
+        if (_wasProcessed)
+            throw new InvalidOperationException(
+                """
+                Cannot mark processed.
+                Catalogue page item is already processed.
+                """
+            );
+        return new CataloguePageItem(this, wasProcessed: true);
+    }
+    
+    public static CataloguePageItem FromSnapshot(CataloguePageItemSnapshot snapshot)
+    {
+        return new(
+            id: snapshot.Id,
+            catalogueUrlId: snapshot.CatalogueUrlId,
+            payload: snapshot.Payload,
+            wasProcessed: snapshot.WasProcessed,
+            retryCount: snapshot.RetryCount);
+    }
+
+    public static CataloguePageItem New(string itemId, Guid catalogueUrlId, string url, IReadOnlyList<string> photos)
+    {
+        return new(
+            id: itemId,
+            catalogueUrlId: catalogueUrlId,
+            payload: new { url, photos },
+            wasProcessed: false,
+            retryCount: 0);
+    }
+    
     public CataloguePageItem(
         string id, 
         Guid catalogueUrlId, 

@@ -20,18 +20,13 @@ public sealed class RemoveConfirmedRegistrationTicketsService(
     {
         await using IPostgreSqlAdapter session = await dataSourceFactory.CreateAdapter(context.CancellationToken);
         NpgSqlRegisteredTicketsStorage storage = new(session);
-            
         await session.UseTransaction();
-        _logger.Information("Executing removing confirmed registration tickets job.");
         CancellationToken ct = context.CancellationToken;
         QueryRegisteredTicketArgs args = new(FinishedOnly: true, SentOnly: true, Limit: 50, WithLock: true);
         RegisterParserServiceTicket[] tickets = [..await storage.GetTickets(args, ct)];
-        if (tickets.Length == 0)
-        {
-            _logger.Information("No tickets found. Stopping removing confirmed registration tickets job.");
-            return;
-        }
-
+        if (tickets.Length == 0) return;
+        
+        _logger.Information("Executing removing confirmed registration tickets job.");
         int removed = await storage.DeleteMany(tickets);
             
         try

@@ -1,5 +1,4 @@
 ﻿using RemTechAvitoVehiclesParser.ParserServiceRegistration.Database;
-using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.RegisterParserCreationTicket.Decorators;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Models;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
 

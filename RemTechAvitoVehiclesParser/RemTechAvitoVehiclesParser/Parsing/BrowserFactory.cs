@@ -15,7 +15,8 @@ public sealed class BrowserFactory
                 "--disable-gpu",
                 "--disable-dev-shm-usage",
                 "--no-zygote",
-            ]
+            ],
+            UserDataDir = null
         };
 
         IBrowser browser = await Puppeteer.LaunchAsync(options);

@@ -7,22 +7,11 @@ public static class BrowserActions
 {
     extension(IBrowser browser)
     {
-        public async Task Invoke(Func<IBrowser, Task> invoke)
-        {
-            await invoke(browser);
-        }
-        
-        public async Task<U> Invoke<U>(Func<IBrowser, Task<U>> invoke)
-        {
-            return await invoke(browser);
-        }
-
         public async Task<IPage> GetPage()
         {
-            IPage[] pages = await browser.PagesAsync();
-            return pages.First();
+            return (await browser.PagesAsync()).First();
         }
-
+    
         public void Destroy()
         {
             int browserProcessId = browser.Process.Id;
@@ -39,5 +28,5 @@ public static class BrowserActions
             await process.WaitForExitAsync();
             await browser.DisposeAsync();
         }
-    }
+    } 
 }

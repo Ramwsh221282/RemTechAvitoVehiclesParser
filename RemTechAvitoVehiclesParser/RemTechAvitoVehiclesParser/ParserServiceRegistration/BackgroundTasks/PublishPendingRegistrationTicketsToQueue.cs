@@ -20,22 +20,15 @@ public sealed class PublishPendingRegistrationTicketsToQueue(
     
     public async Task Execute(IJobExecutionContext context)
     {
-        _logger.Information("Starting publishing pending registration messages.");
         CancellationToken ct = context.CancellationToken;
-
         await using IPostgreSqlAdapter session = await dataSourceFactory.CreateAdapter(context.CancellationToken);
         RegisterTicketRabbitMqPublisher publisher = new(factory);
         NpgSqlRegisteredTicketsStorage storage = new(session);
-            
         await session.UseTransaction(ct: ct);
 
         QueryRegisteredTicketArgs args = new(NotSentOnly: true, Limit: 50, WithLock: true, NotFinishedOnly: true);
         RegisterParserServiceTicket[] pendingTickets = [..await storage.GetTickets(args, ct)];
-        if (pendingTickets.Length == 0)
-        {
-            _logger.Information("Stopping publishing pending registration messages. No pending messages.");
-            return;
-        }
+        if (pendingTickets.Length == 0) return;
 
         List<RegisterParserServiceTicket> succeeded = [];
         foreach (RegisterParserServiceTicket pending in pendingTickets)

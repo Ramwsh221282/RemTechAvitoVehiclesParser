@@ -1,13 +1,41 @@
-﻿using PuppeteerSharp;
-using RemTechAvitoVehiclesParser;
+﻿using Microsoft.Extensions.DependencyInjection;
+using PuppeteerSharp;
 using RemTechAvitoVehiclesParser.Parsing;
 using RemTechAvitoVehiclesParser.Parsing.FirewallBypass;
 using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
+using RemTechAvitoVehiclesParser.Utilities.TextTransforming;
 
 namespace Tests.PuppeteerTests;
 
 public sealed class BrowserTests(PuppeteerTestFixture fixture) : IClassFixture<PuppeteerTestFixture>
 {
+    private readonly BrowserFactory _browserFactory = fixture.Services.GetRequiredService<BrowserFactory>();
+    private readonly AvitoBypassFactory _bypassFactory = fixture.Services.GetRequiredService<AvitoBypassFactory>();
+    
+    [Fact]
+    private async Task Scrape_Single_Catalogue_Item()
+    {
+        const string url =
+            "https://www.avito.ru/vaskelovo/gruzoviki_i_spetstehnika/harvester_john_deere_1270d_4190912922?context=H4sIAAAAAAAA_wE_AMD_YToyOntzOjEzOiJsb2NhbFByaW9yaXR5IjtiOjA7czoxOiJ4IjtzOjE2OiI3c05LZmJnZFJONU1rYjB5Ijt9GqaZOT8AAAA";
+        IBrowser browser = await _browserFactory.ProvideBrowser(headless: false);
+        IPage page = await browser.GetPage();
+        AvitoSpecialEquipmentAdvertisement advertisement = await AvitoSpecialEquipmentAdvertisement.Create(page, url, _bypassFactory);
+
+        ITextTransformer transformer = new TextTransformerBuilder()
+            .UsePunctuationCleaner()
+            .UseNewLinesCleaner()
+            .UseSpacesCleaner()
+            .Build();
+        
+        Assert.True(await advertisement.HasTitle());
+        Assert.True(await advertisement.HasPrice());
+        Assert.True(await advertisement.HasCharacteristics());
+        Assert.True(await advertisement.HasDescription(transformer));
+        Assert.True(await advertisement.HasAddress(transformer));
+        
+        await browser.DestroyAsync();
+    }
+    
     [Fact]
     private async Task Hover_Avito_Advertisement_Photos()
     {

@@ -1,5 +1,4 @@
 ﻿using PuppeteerSharp;
-using RemTechAvitoVehiclesParser;
 using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
 
 namespace Tests.PuppeteerTests;

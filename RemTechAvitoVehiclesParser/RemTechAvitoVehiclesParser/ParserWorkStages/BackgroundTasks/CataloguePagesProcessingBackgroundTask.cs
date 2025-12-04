@@ -3,7 +3,6 @@ using Quartz;
 using RemTechAvitoVehiclesParser.ParserWorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.Models;
 using RemTechAvitoVehiclesParser.Parsing;
-using RemTechAvitoVehiclesParser.Parsing.FirewallBypass;
 using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
 using RemTechAvitoVehiclesParser.SharedDependencies.Quartz;
 using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
@@ -12,18 +11,18 @@ namespace RemTechAvitoVehiclesParser.ParserWorkStages.BackgroundTasks;
 
 [DisallowConcurrentExecution]
 [CronSchedule("*/5 * * * * ?")]
-public sealed class ProcessParserUrlsBackgroundTask(
+public sealed class CataloguePagesProcessingBackgroundTask(
     NpgSqlDataSourceFactory dataSourceFactory,
     Serilog.ILogger logger,
-    BrowserFactory browserFactory
+    BrowserFactory browserFactory,
+    AvitoBypassFactory bypassFactory
     ) : 
     ICronScheduleJob
 {
-    private readonly Serilog.ILogger _logger = logger.ForContext<ProcessParserUrlsBackgroundTask>();
+    private readonly Serilog.ILogger _logger = logger.ForContext<CataloguePagesProcessingBackgroundTask>();
     
     public async Task Execute(IJobExecutionContext context)
     {
-        _logger.Information("Starting processing parser url background task.");
         CancellationToken ct = context.CancellationToken;
         await using IPostgreSqlAdapter adapter = await dataSourceFactory.CreateAdapter(ct);
         NpgSqlParserWorkStagesStorage workStages = new(adapter);
@@ -34,14 +33,7 @@ public sealed class ProcessParserUrlsBackgroundTask(
         
         ParserWorkStageQuery workStageQuery = new(Name: WorkStageConstants.CatalogueStageName, WithLock: true);
         Maybe<ParserWorkStage> stage = await workStages.GetWorkStage(workStageQuery, ct);
-        if (!stage.HasValue)
-        {
-            _logger.Information("""
-                                Stopping processing parser url background task.
-                                No catalogue stage exists.
-                                """);
-            return;
-        }
+        if (!stage.HasValue) return;
             
         PaginationEvaluationParsersQuery parsersQuery = new(
             ParserId: stage.Value.GetSnapshot().Id,
@@ -52,14 +44,7 @@ public sealed class ProcessParserUrlsBackgroundTask(
             WithLock: true);
         
         Maybe<PaginationEvaluationParser> parser = await parsers.GetParser(parsersQuery, ct);
-        if (!parser.HasValue)
-        {
-            _logger.Information("""
-                                Stopping processing parser url background task. 
-                                No unprocessed links with pagination initialized. 
-                                """);
-            return;
-        }
+        if (!parser.HasValue) return;
         
         PaginationEvaluationParserSnapshot parserSnapshot = parser.Value.GetSnapshot();
         PaginationEvaluationParserLinkSnapshot link = parserSnapshot.Links.First();
@@ -148,37 +133,33 @@ public sealed class ProcessParserUrlsBackgroundTask(
         )
     {
         CataloguePageUrlSnapshot snapshot = url.GetSnapshot();
-        await using IBrowser browser = await browserFactory.ProvideBrowser(headless: false);
-        await using IPage page = await browser.GetPage();
-        await page.NavigatePage(snapshot.Url);
-        bool solved = await new AvitoByPassFirewallWithRetry(new AvitoBypassFirewallLazy(page, new AvitoBypassFirewall(page))).Bypass();
-        if (!solved)
+        IBrowser browser = await browserFactory.ProvideBrowser(headless: false);
+        
+        try
         {
-            _logger.Warning("Failed to process parser link: {Url}. Unable to resolve captcha.", snapshot.Url);
-            return url;
-        }
+            await (await browser.GetPage()).NavigatePage(snapshot.Url);
+            if (!await bypassFactory.Create(await browser.GetPage()).Bypass())
+            {
+                _logger.Warning("Failed to process parser link: {Url}. Unable to resolve captcha.", snapshot.Url);
+                return url;
+            }
             
-        await page.ScrollBottom();
-        await page.ScrollTop();
+            await (await browser.GetPage()).ScrollBottom();
+            await (await browser.GetPage()).ScrollTop();
 
-        IElementHandle[] catalogueElements = await GetCatalogueElements(page);
-        List<CataloguePageItem> items = [];
-        await foreach ((string Id, string Url, IReadOnlyList<string> Photos) data in GetCatalogueItemsMetadata(catalogueElements, page))
-            items.Add(new CataloguePageItem(
-                id: data.Id,
-                catalogueUrlId: snapshot.Id,
-                payload: new
-                {
-                    url = data.Url,
-                    photos = data.Photos
-                },
-                wasProcessed: false,
-                retryCount: 0
-            ));
+            IElementHandle[] catalogueElements = await GetCatalogueElements(await browser.GetPage());
+            List<CataloguePageItem> items = [];
+            await foreach ((string Id, string Url, IReadOnlyList<string> Photos) data in GetCatalogueItemsMetadata(catalogueElements, await browser.GetPage()))
+                items.Add(CataloguePageItem.New(data.Id, snapshot.Id, data.Url, data.Photos));
 
-        CataloguePageUrl processed = CataloguePageUrl.FromSnapshot(snapshot).MarkProcessed();
-        processed.AddItems(items);
-        return processed;
+            CataloguePageUrl processed = CataloguePageUrl.FromSnapshot(snapshot).MarkProcessed();
+            processed.AddItems(items);
+            return processed;
+        }
+        finally
+        {
+            await browser.DestroyAsync();
+        }
     }
 
     private static async Task<IElementHandle[]> GetCatalogueElements(IPage page)
@@ -190,7 +171,8 @@ public sealed class ProcessParserUrlsBackgroundTask(
     }
     
     private static async IAsyncEnumerable<(string Id, string Url, IReadOnlyList<string> Photos)> GetCatalogueItemsMetadata(
-        IElementHandle[] catalogueItems, IPage page)
+        IElementHandle[] catalogueItems, 
+        IPage page)
     {
         foreach (IElementHandle catalogueItem in catalogueItems)
         {

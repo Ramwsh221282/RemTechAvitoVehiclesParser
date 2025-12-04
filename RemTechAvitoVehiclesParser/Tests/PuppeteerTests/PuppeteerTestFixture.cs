@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using RemTechAvitoVehiclesParser;
 using RemTechAvitoVehiclesParser.Parsing;
 using Serilog;
 
@@ -18,6 +17,7 @@ public sealed class PuppeteerTestFixture : IAsyncLifetime
         services.AddSingleton(logger);
         services.AddSingleton<BrowserDownloader>();
         services.AddSingleton<BrowserFactory>();
+        services.AddSingleton<AvitoBypassFactory>();
         _sp = services.BuildServiceProvider();
     }
     

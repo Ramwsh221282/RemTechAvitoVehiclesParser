@@ -10,8 +10,14 @@ public static class ParsingDependencyInjection
         {
             services.AddParserWorkStartEventListener();
             services.AddBrowserFactory();
+            services.AddBypassFactory();
         }
 
+        public void AddBypassFactory()
+        {
+            services.AddSingleton<AvitoBypassFactory>();
+        }
+        
         public void AddBrowserFactory()
         {
             services.AddSingleton<BrowserFactory>();

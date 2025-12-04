@@ -3,9 +3,11 @@ using RemTechAvitoVehiclesParser.ParserWorkStages;
 using RemTechAvitoVehiclesParser.Parsing;
 using RemTechAvitoVehiclesParser.SharedDependencies;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
+using RemTechAvitoVehiclesParser.Utilities;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+builder.Services.RegisterUtilities();
 builder.Services.RegisterParserServiceRegistrationContext();
 builder.Services.RegisterParserWorkStagesContext();
 builder.Services.RegisterParsingContext();

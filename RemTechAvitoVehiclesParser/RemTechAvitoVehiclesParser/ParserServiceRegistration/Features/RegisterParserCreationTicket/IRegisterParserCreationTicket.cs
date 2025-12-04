@@ -1,5 +1,4 @@
-﻿using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.RegisterParserCreationTicket.Decorators;
-using RemTechAvitoVehiclesParser.ParserServiceRegistration.Models;
+﻿using RemTechAvitoVehiclesParser.ParserServiceRegistration.Models;
 
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.RegisterParserCreationTicket;
 

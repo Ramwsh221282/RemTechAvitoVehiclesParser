@@ -14,9 +14,7 @@ public static class ParserWorkStagesDependencyInjection
         {
             services.RegisterStorage();
             services.AddSaveEvaluationParserWorkStageCommand();
-            services.RegisterPaginationEvaluationBackgroundJob();
-            services.RegisterSwitchToCatalogueStageBackgroundJob();
-            services.AddProcessParserUrlsBackgroundTask();
+            services.AddParserProcessingJobs();
         }
         
         public void RegisterStorage()
@@ -26,19 +24,12 @@ public static class ParserWorkStagesDependencyInjection
             services.AddScoped<NpgSqlCataloguePageUrlsStorage>();
         }
 
-        public void AddProcessParserUrlsBackgroundTask()
+        public void AddParserProcessingJobs()
         {
-            services.AddSingleton<ICronScheduleJob, ProcessParserUrlsBackgroundTask>();
-        }
-        
-        public void RegisterPaginationEvaluationBackgroundJob()
-        {
-            services.AddSingleton<ICronScheduleJob, CreatePaginationEvaluationBackgroundTask>();
-        }
-
-        public void RegisterSwitchToCatalogueStageBackgroundJob()
-        {
+            services.AddSingleton<ICronScheduleJob, CataloguePagesProcessingBackgroundTask>();
+            services.AddSingleton<ICronScheduleJob, CataloguePagesEvaluationBackgroundTask>();
             services.AddSingleton<ICronScheduleJob, SwitchToCatalogueStageBackgroundTask>();
+            services.AddSingleton<ICronScheduleJob, ConcretePagesProcessingBackgroundTask>();
         }
         
         public void AddSaveEvaluationParserWorkStageCommand()

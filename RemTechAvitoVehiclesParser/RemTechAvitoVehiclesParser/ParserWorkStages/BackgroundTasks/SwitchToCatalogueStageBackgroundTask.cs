@@ -21,7 +21,6 @@ public sealed class SwitchToCatalogueStageBackgroundTask(
         try
         {
             CancellationToken ct = context.CancellationToken;
-            _logger.Information("Checking if can switch to catalogue stage");
             await using IPostgreSqlAdapter session = await dataSourceFactory.CreateAdapter(context.CancellationToken);
             await session.UseTransaction(ct);
             NpgSqlPaginationEvaluationParsersStorage parsers = new(session);
@@ -29,11 +28,7 @@ public sealed class SwitchToCatalogueStageBackgroundTask(
             NpgSqlCataloguePageUrlsStorage catalogueUrls = new(session);
             ParserWorkStageQuery stageQuery = new(WithLock: true, Name: WorkStageConstants.EvaluationStageName);
             Maybe<ParserWorkStage> stage = await stages.GetWorkStage(stageQuery, ct);
-            if (!stage.HasValue)
-            {
-                _logger.Information("No evaluating work stages detected. Stopping job.");
-                return;
-            }
+            if (!stage.HasValue) return;
 
             PaginationEvaluationParsersQuery parserQuery = new(
                 LinksWithCurrentPage: true,
@@ -42,14 +37,8 @@ public sealed class SwitchToCatalogueStageBackgroundTask(
                 WithLock: true);
             
             Maybe<PaginationEvaluationParser> parser = await parsers.GetParser(parserQuery, ct);
-            if (!parser.HasValue)
-            {
-                _logger.Information("No pagination parser detected. Stopping job.");
-                return;
-            }
-
-            if (!parser.Value.GetSnapshot().Links.All(l => l.CurrentPage.HasValue && l.MaxPage.HasValue))
-                _logger.Information("Pagination parser has not pagination initialized. Stopping job.");
+            if (!parser.HasValue) return;
+            if (!parser.Value.GetSnapshot().Links.All(l => l.CurrentPage.HasValue && l.MaxPage.HasValue)) return;
 
             foreach (PaginationEvaluationParserLink link in parser.Value.Links())
             {
