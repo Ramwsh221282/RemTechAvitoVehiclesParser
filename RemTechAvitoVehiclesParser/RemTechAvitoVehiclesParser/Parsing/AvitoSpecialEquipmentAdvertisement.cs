@@ -33,7 +33,7 @@ public sealed class AvitoSpecialEquipmentAdvertisement : ISnapshotSource<AvitoSp
         Maybe<string> brand = await elements[^2].GetElementInnerText();
         Maybe<string> type = await elements[^3].GetElementInnerText();
         if (!model.HasValue || !brand.HasValue || !type.HasValue) return false;
-        string title = $"{type.Value} {brand.Value} {model.Value}";
+        string title = $" {type.Value} {brand.Value} {model.Value} ";
         _properties.Add(propertyName, title);
         return true;
     }
@@ -54,7 +54,7 @@ public sealed class AvitoSpecialEquipmentAdvertisement : ISnapshotSource<AvitoSp
         {
             Maybe<string> text = await descriptionPart.GetElementInnerText();
             if (!text.HasValue) continue;
-            string transformed = transformer.TransformText(text.Value);
+            string transformed = transformer.TransformText(" " + text.Value + " ");
             descriptions.Add(transformed);
         }
         if (descriptions.Count == 0) return false;
@@ -99,7 +99,7 @@ public sealed class AvitoSpecialEquipmentAdvertisement : ISnapshotSource<AvitoSp
             Maybe<string> nameValuePair = await characteristicNode.GetElementInnerText();
             if (!nameValuePair.HasValue) continue;
             string[] splitted = nameValuePair.Value.Trim().Split(':');
-            string characteristic = $"{splitted[0]} {splitted[^1]}";
+            string characteristic = $" {splitted[0]} {splitted[^1]} ";
             characteristics.Add(characteristic);
         }
         if (characteristics.Count == 0) return false;
@@ -120,7 +120,7 @@ public sealed class AvitoSpecialEquipmentAdvertisement : ISnapshotSource<AvitoSp
         if (!locationValueContainer.HasValue) return false;
         Maybe<string> locationValue = await locationValueContainer.Value.GetElementInnerText();
         if (!locationValue.HasValue) return false;
-        string transformed = transformer.TransformText(locationValue.Value);
+        string transformed = transformer.TransformText(" " + locationValue.Value + " ");
         _properties.Add(addressPropertyName, transformed);
         return true;
     }
