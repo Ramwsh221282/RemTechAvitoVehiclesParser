@@ -61,3 +61,17 @@ CREATE TABLE IF NOT EXISTS avito_parser_module.catalogue_items
     REFERENCES avito_parser_module.catalogue_urls(id)
     ON DELETE CASCADE 
 );
+
+CREATE TABLE IF NOT EXISTS avito_parser_module.pending_items
+(
+   id varchar(32) primary key,
+   url text not null,
+   title varchar(128) not null,
+   address varchar(512) not null,
+   price bigint not null,
+   is_nds boolean not null,
+   description_list jsonb not null,
+   characteristics jsonb not null,
+   photos jsonb not null,
+   was_processed boolean not null
+);

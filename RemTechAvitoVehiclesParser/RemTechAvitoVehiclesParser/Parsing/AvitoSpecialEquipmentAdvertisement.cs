@@ -1,10 +1,21 @@
 ﻿using PuppeteerSharp;
 using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
+using RemTechAvitoVehiclesParser.SharedDependencies.Utilities.Snapshots;
 using RemTechAvitoVehiclesParser.Utilities.TextTransforming;
 
 namespace RemTechAvitoVehiclesParser.Parsing;
 
-public sealed class AvitoSpecialEquipmentAdvertisement
+public sealed class AvitoSpecialEquipmentAdvertisementSnapshot : ISnapshot
+{
+    public required string Title { get; init; }
+    public required long Price { get; init; }
+    public required bool IsNds { get; init; }
+    public required string Address { get; init; }
+    public required IReadOnlyList<string> Characteristics { get; init; }
+    public required IReadOnlyList<string> DescriptionList { get; init; }
+}
+
+public sealed class AvitoSpecialEquipmentAdvertisement : ISnapshotSource<AvitoSpecialEquipmentAdvertisement, AvitoSpecialEquipmentAdvertisementSnapshot>
 {
     private readonly Dictionary<string, object> _properties = [];
     private readonly IPage _page;
@@ -15,13 +26,15 @@ public sealed class AvitoSpecialEquipmentAdvertisement
         const string propertyName = "title";
         if (_properties.ContainsKey(propertyName)) return true;
         if (!_bypassedBlock) return false;
-        Maybe<IElementHandle> titleContainer = await _page.GetElementRetriable("div.js-item-view-title-info");
-        if (!titleContainer.HasValue) return false;
-        Maybe<IElementHandle> titleElement = await titleContainer.Value.GetElementRetriable("h1[itemprop='name']");
-        if (!titleElement.HasValue) return false;
-        Maybe<string> titleValue = await titleElement.Value.GetElementInnerText();
-        if (!titleValue.HasValue) return false;
-        _properties.Add(propertyName, titleValue.Value);
+        Maybe<IElementHandle> breadcrumbsContainer = await _page.GetElementRetriable("div[id='bx_item-breadcrumbs']");
+        if (!breadcrumbsContainer.HasValue) return false;
+        IElementHandle[] elements = await breadcrumbsContainer.Value.GetElements("span[itemprop='itemListElement']");
+        Maybe<string> model = await elements[^1].GetElementInnerText();
+        Maybe<string> brand = await elements[^2].GetElementInnerText();
+        Maybe<string> type = await elements[^3].GetElementInnerText();
+        if (!model.HasValue || !brand.HasValue || !type.HasValue) return false;
+        string title = $"{type.Value} {brand.Value} {model.Value}";
+        _properties.Add(propertyName, title);
         return true;
     }
 
@@ -29,6 +42,7 @@ public sealed class AvitoSpecialEquipmentAdvertisement
     {
         const string propertyName = "description_list";
         if (_properties.ContainsKey(propertyName)) return true;
+        if (!_bypassedBlock) return false;
         List<string> descriptions = [];
         Maybe<IElementHandle> descriptionContainer = await _page.GetElementRetriable("div[id='bx_item-description']");
         if (!descriptionContainer.HasValue) return false;
@@ -74,6 +88,7 @@ public sealed class AvitoSpecialEquipmentAdvertisement
     {
         const string characteristicsPropertyName = "characteristics";
         if (_properties.ContainsKey(characteristicsPropertyName)) return true;
+        if (!_bypassedBlock) return false;
         List<string> characteristics = [];
         Maybe<IElementHandle> characteristicsContainer = await _page.GetElementRetriable("ul.params__paramsList___XzY3MG");
         if (!characteristicsContainer.HasValue) return false;
@@ -81,11 +96,11 @@ public sealed class AvitoSpecialEquipmentAdvertisement
         if (characteristicNodes.Length == 0) return false;
         foreach (IElementHandle characteristicNode in characteristicNodes)
         {
-            Maybe<IElementHandle> valueContainer = await characteristicNode.GetElementRetriable("span");
-            if (!valueContainer.HasValue) continue;
-            Maybe<string> value = await valueContainer.Value.GetElementInnerText();
-            if (!value.HasValue) return false;
-            characteristics.Add(value.Value);
+            Maybe<string> nameValuePair = await characteristicNode.GetElementInnerText();
+            if (!nameValuePair.HasValue) continue;
+            string[] splitted = nameValuePair.Value.Trim().Split(':');
+            string characteristic = $"{splitted[0]} {splitted[^1]}";
+            characteristics.Add(characteristic);
         }
         if (characteristics.Count == 0) return false;
         _properties.Add(characteristicsPropertyName, characteristics);
@@ -96,6 +111,7 @@ public sealed class AvitoSpecialEquipmentAdvertisement
     {
         const string addressPropertyName = "address";
         if (_properties.ContainsKey(addressPropertyName)) return true;
+        if (!_bypassedBlock) return false;
         Maybe<IElementHandle> addressContainer = await _page.GetElementRetriable("div.style__item-map___XzQ5MT");
         if (!addressContainer.HasValue) return false;
         Maybe<IElementHandle> locationContainer = await addressContainer.Value.GetElementRetriable("div.style__item-map-location___XzQ5MT");
@@ -125,4 +141,21 @@ public sealed class AvitoSpecialEquipmentAdvertisement
         _page = page;
         _bypassedBlock = bypassedBlock;
     }
+
+    public AvitoSpecialEquipmentAdvertisementSnapshot GetSnapshot() => new()
+    {
+        Address = GetAddress(),
+        Characteristics = GetCharacteristics(),
+        IsNds = GetIsNds(),
+        Price = GetPrice(),
+        DescriptionList = GetDescription(),
+        Title = GetTitle()
+    };
+
+    private string GetAddress() => (_properties["address"] as string)!;
+    private IReadOnlyList<string> GetCharacteristics() => (_properties["characteristics"] as IReadOnlyList<string>)!;
+    private long GetPrice() => (long)_properties["price"];
+    private bool GetIsNds() => (bool)_properties["is_nds"];
+    private string GetTitle() => (_properties["title"] as string)!;
+    private IReadOnlyList<string> GetDescription() => (_properties["description_list"] as IReadOnlyList<string>)!;
 }

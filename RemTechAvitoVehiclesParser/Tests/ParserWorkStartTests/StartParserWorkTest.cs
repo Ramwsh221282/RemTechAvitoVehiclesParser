@@ -26,7 +26,6 @@ public sealed class StartParserWorkTest(ParserWorkStartFixture fixture) : IClass
         Assert.True(hasParser);
         await Task.Delay(TimeSpan.FromMinutes(1));
         bool hasPaginationEvaluated = await EnsurePaginationEvaluated(id);
-        bool hasCatalogueStage = await EnsureHasCatalogueStage(id);
         Assert.True(hasPaginationEvaluated);
         await Task.Delay(TimeSpan.FromHours(1));
     }

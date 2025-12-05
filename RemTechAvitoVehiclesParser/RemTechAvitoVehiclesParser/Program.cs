@@ -1,6 +1,7 @@
 using RemTechAvitoVehiclesParser.ParserServiceRegistration;
 using RemTechAvitoVehiclesParser.ParserWorkStages;
 using RemTechAvitoVehiclesParser.Parsing;
+using RemTechAvitoVehiclesParser.ResultsPublishing;
 using RemTechAvitoVehiclesParser.SharedDependencies;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
 using RemTechAvitoVehiclesParser.Utilities;
@@ -11,6 +12,7 @@ builder.Services.RegisterUtilities();
 builder.Services.RegisterParserServiceRegistrationContext();
 builder.Services.RegisterParserWorkStagesContext();
 builder.Services.RegisterParsingContext();
+builder.Services.RegisterResultPublishing();
 builder.Services.RegisterSharedDependencies();
 
 WebApplication app = builder.Build();

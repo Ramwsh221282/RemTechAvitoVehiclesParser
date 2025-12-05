@@ -62,6 +62,9 @@ public class ParserWorkStage(Guid id, string name, DateTime created, DateTime? f
     
     public sealed class ConcreteItemWorkStage(ParserWorkStage stage) 
         : ParserWorkStage(stage, name: WorkStageConstants.ConcreteItemStageName);
+
+    public sealed class FinalizationWorkStage(ParserWorkStage stage)
+        : ParserWorkStage(stage, name: WorkStageConstants.FinalizationStage);
 }
 
 public static class WorkStageConstants
@@ -69,4 +72,5 @@ public static class WorkStageConstants
     public const string EvaluationStageName = "EVALUATION";
     public const string CatalogueStageName = "CATALOGUE";
     public const string ConcreteItemStageName = "CONCRETE";
+    public const string FinalizationStage = "FINALIZATION";
 }

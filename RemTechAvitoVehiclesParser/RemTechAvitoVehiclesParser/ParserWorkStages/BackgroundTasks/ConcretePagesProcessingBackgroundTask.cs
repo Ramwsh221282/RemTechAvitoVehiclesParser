@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using PuppeteerSharp;
+﻿using PuppeteerSharp;
 using Quartz;
 using RemTechAvitoVehiclesParser.ParserWorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.Models;
@@ -30,6 +29,7 @@ public sealed class ConcretePagesProcessingBackgroundTask(
         await using IPostgreSqlAdapter adapter = await dataSourceFactory.CreateAdapter(ct);
         NpgSqlParserWorkStagesStorage stagesStorage = new(adapter);
         NpgSqlCataloguePageItemsStorage itemsStorage = new(adapter);
+        NpgSqlPendingToPublishItemsStorage npgSqlPendingItemsStorage = new(adapter);
 
         await adapter.UseTransaction(ct);
         ParserWorkStageQuery stageQuery = new(Name: WorkStageConstants.ConcreteItemStageName, WithLock: true);
@@ -38,16 +38,29 @@ public sealed class ConcretePagesProcessingBackgroundTask(
 
         CataloguePageItemQuery itemsQuery = new(NotProcessedOnly: true, Limit: 50, RetryLimitTreshold: 5);
         CataloguePageItem[] items = [..await itemsStorage.GetItems(itemsQuery, ct)];
-        if (items.Length == 0) return; // probably should stop stage and switch to final.
+        if (items.Length == 0)
+        {
+            await SwitchStageToFinalization(workStage.Value, stagesStorage, ct);
+            if (!await adapter.TransactionCommited(ct)) _logger.Error("Error at committing transaction.");
+        }
         
         CataloguePageItemSnapshot[] snapshots = [..items.Select(i => i.GetSnapshot())];
-        IEnumerable<CataloguePageItem> processed = await ProcessItems(snapshots);
-        await itemsStorage.UpdateMany(processed);
+        
+        (IEnumerable<CataloguePageItem> catalogueItems, IEnumerable<PendingToPublishItem> results) = await ProcessItems(snapshots);
+        
+        int updated = await itemsStorage.UpdateMany(catalogueItems);
+        int inserted = await npgSqlPendingItemsStorage.SaveMany(results);
+        
+        _logger.Information("""
+                            Concrete items processing info: 
+                            Updated catalogue items: {CatLength}
+                            Saved pending items: {PendLength}
+                            """, updated, inserted);
         
         if (!await adapter.TransactionCommited(ct)) _logger.Error("Error at committing transaction.");
     }
 
-    private async Task<IEnumerable<CataloguePageItem>> ProcessItems(CataloguePageItemSnapshot[] snapshots)
+    private async Task<(IEnumerable<CataloguePageItem>, IEnumerable<PendingToPublishItem>)> ProcessItems(CataloguePageItemSnapshot[] snapshots)
     {
         ITextTransformer transformer = textTransformerBuilder
             .UsePunctuationCleaner()
@@ -57,32 +70,33 @@ public sealed class ConcretePagesProcessingBackgroundTask(
         
         IBrowser browser = await browserFactory.ProvideBrowser(headless: false);
         List<CataloguePageItem> processed = [];
+        List<PendingToPublishItem> pendingItems = [];
         foreach (CataloguePageItemSnapshot itemSnapshot in snapshots)
         {
             CataloguePageItem fromSnapshot = CataloguePageItem.FromSnapshot(itemSnapshot);
-            using JsonDocument document = JsonDocument.Parse(itemSnapshot.Payload);
-            string url = document.RootElement.GetProperty("url").GetString()!;
-            IReadOnlyList<string> photos = GetPhotosFromJson(document);
+            string url = itemSnapshot.GetUrl();
+            IReadOnlyList<string> photos = itemSnapshot.GetPhotos();
+
             try
             {
+                processed.Add(fromSnapshot.MarkProcessed());
                 _logger.Information("Processing concrete item: {Url}", url);
-                AvitoSpecialEquipmentAdvertisement advertisement =
-                    await AvitoSpecialEquipmentAdvertisement.Create(await browser.GetPage(), url, bypassFactory);
-
-                bool[] propertiesExistance =
-                [
-                    await advertisement.HasTitle(),
-                    await advertisement.HasPrice(),
-                    await advertisement.HasCharacteristics(),
-                    await advertisement.HasDescription(transformer),
-                    await advertisement.HasAddress(transformer)
-                ];
-
-                CataloguePageItem result = propertiesExistance.All(i => i)
-                    ? fromSnapshot.MarkProcessed()
-                    : fromSnapshot.IncreaseRetry();
-
+                var advertisement = await AvitoSpecialEquipmentAdvertisement.Create(await browser.GetPage(), url, bypassFactory);
+                (CataloguePageItem result, bool success) = await ResolveByPropertiesExistance(transformer, fromSnapshot, advertisement);
+                if (success)
+                {
+                    AvitoSpecialEquipmentAdvertisementSnapshot advertisementSnapshot = advertisement.GetSnapshot();
+                    PendingToPublishItem pendingItem = CreatePending(itemSnapshot.Id, url, photos, advertisementSnapshot);
+                    pendingItems.Add(pendingItem);
+                }
+                
                 processed.Add(result);
+            }
+            catch(ArgumentNullException)
+            {
+                _logger.Error("Null reference exception in browser. Recreating browser");
+                await browser.DestroyAsync();
+                browser = await browserFactory.ProvideBrowser(headless: false);
             }
             catch(NullReferenceException)
             {
@@ -99,14 +113,51 @@ public sealed class ConcretePagesProcessingBackgroundTask(
         }
         
         await browser.DestroyAsync();
-        return processed;
+        return (processed, pendingItems);
+    }
+
+    private async Task SwitchStageToFinalization(ParserWorkStage stage, NpgSqlParserWorkStagesStorage storage, CancellationToken ct)
+    {
+        ParserWorkStage finalStage = stage.ChangeStage(new ParserWorkStage.FinalizationWorkStage(stage));
+        await storage.Update(finalStage, ct);
+    }
+
+    private static async Task<(CataloguePageItem, bool)> ResolveByPropertiesExistance(
+        ITextTransformer transformer,
+        CataloguePageItem item,
+        AvitoSpecialEquipmentAdvertisement advertisement)
+    {
+        bool hasTitle = await advertisement.HasTitle();
+        if (!hasTitle) return (item.IncreaseRetry(), false);
+        bool hasPrice = await advertisement.HasPrice();
+        if (!hasPrice) return (item.IncreaseRetry(), false);
+        bool hasCharacteristics = await advertisement.HasCharacteristics();
+        if (!hasCharacteristics) return (item.IncreaseRetry(), false);
+        bool hasDescription = await advertisement.HasDescription(transformer);
+        if (!hasDescription) return (item.IncreaseRetry(), false);
+        bool hasAddress = await advertisement.HasAddress(transformer);
+        if (!hasAddress) return (item.IncreaseRetry(), false);
+        return (item.MarkProcessed(), true);
     }
     
-    private static IReadOnlyList<string> GetPhotosFromJson(JsonDocument document)
+    private static PendingToPublishItem CreatePending(
+        string id, 
+        string url,
+        IEnumerable<string> photos,
+        AvitoSpecialEquipmentAdvertisementSnapshot advertisement
+        )
     {
-        List<string> photos = [];
-        foreach (JsonElement photoJson in document.RootElement.GetProperty("photos").EnumerateArray())
-            photos.Add(photoJson.GetString()!);
-        return photos;
+        return new(
+            id: id,
+            url: url,
+            title: advertisement.Title,
+            address: advertisement.Address,
+            price: advertisement.Price,
+            isNds: advertisement.IsNds,
+            descriptionList: advertisement.DescriptionList,
+            characteristicList: advertisement.Characteristics,
+            photos: photos,
+            wasProcessed: false
+        );
     }
 }
