@@ -14,11 +14,3 @@ public sealed partial class ExtraSpacesRemovingTextTransformer : ITextTransforme
     [GeneratedRegex(@"\s+", RegexOptions.Compiled)]
     private static partial Regex Regex();
 }
-
-public sealed class NoneTextTransformer : ITextTransformer
-{
-    public string TransformText(string text)
-    {
-        return text;
-    }
-}

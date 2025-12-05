@@ -22,6 +22,12 @@ public sealed class TextTransformerBuilder
         return this;
     }
 
+    public TextTransformerBuilder UseEmojiCleaner()
+    {
+        _transformer = new ChainedTextTransformer(_transformer, new EmojiRemovingTextTransformer());
+        return this;
+    }
+    
     public ITextTransformer Build()
     {
         ITextTransformer nextDefault = new NoneTextTransformer();

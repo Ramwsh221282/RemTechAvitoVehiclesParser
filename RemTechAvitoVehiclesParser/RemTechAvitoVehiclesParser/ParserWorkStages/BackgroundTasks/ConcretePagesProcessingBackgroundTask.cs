@@ -64,6 +64,7 @@ public sealed class ConcretePagesProcessingBackgroundTask(
     {
         ITextTransformer transformer = textTransformerBuilder
             .UsePunctuationCleaner()
+            .UseEmojiCleaner()
             .UseNewLinesCleaner()
             .UseSpacesCleaner()
             .Build();
