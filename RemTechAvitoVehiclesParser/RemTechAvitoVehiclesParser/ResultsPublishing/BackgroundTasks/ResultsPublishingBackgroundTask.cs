@@ -29,7 +29,14 @@ public sealed class ResultsPublishingBackgroundTask(
 
         PendingItemsQuery itemsQuery = new(UnprocessedOnly: true, WithLock: true, Limit: 50);
         PendingToPublishItem[] items = (await pendingItemsStorage.GetMany(itemsQuery, ct)).ToArray();
-        if (items.Length == 0) return;
+        if (items.Length == 0)
+        {
+            ParserWorkStage sleeping = stage.Value.ChangeStage(new ParserWorkStage.SleepingWorkStage(stage.Value));
+            await stagesStorage.Update(sleeping, ct);
+            await adapter.CommitTransaction(ct);
+            logger.Information("Switched to sleeping work stage.");
+            return;
+        }
         
         string resultsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "results");
         List<PendingToPublishItem> processed = [];
