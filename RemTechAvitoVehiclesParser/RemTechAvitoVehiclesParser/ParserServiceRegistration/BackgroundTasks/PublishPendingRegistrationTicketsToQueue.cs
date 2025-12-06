@@ -1,28 +1,29 @@
 ﻿using Quartz;
+using RemTech.SharedKernel.Infrastructure.NpgSql;
+using RemTech.SharedKernel.Infrastructure.Quartz;
+using RemTech.SharedKernel.Infrastructure.RabbitMq;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Database;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Models;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.RabbitMq;
-using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
-using RemTechAvitoVehiclesParser.SharedDependencies.Quartz;
-using RemTechAvitoVehiclesParser.SharedDependencies.RabbitMq;
 
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.BackgroundTasks;
 
 [DisallowConcurrentExecution]
 [CronSchedule("*/5 * * * * ?")]
 public sealed class PublishPendingRegistrationTicketsToQueue(
-    Serilog.ILogger logger,
-    NpgSqlDataSourceFactory dataSourceFactory,
-    RabbitMqConnectionFactory factory
-    ) : ICronScheduleJob
+    Serilog.ILogger logger, 
+    NpgSqlConnectionFactory npgSql, 
+    RabbitMqConnectionSource rabbitMq
+    ) :
+    ICronScheduleJob
 {
     private readonly Serilog.ILogger _logger = logger.ForContext<PublishPendingRegistrationTicketsToQueue>();
     
     public async Task Execute(IJobExecutionContext context)
     {
         CancellationToken ct = context.CancellationToken;
-        await using IPostgreSqlAdapter session = await dataSourceFactory.CreateAdapter(context.CancellationToken);
-        RegisterTicketRabbitMqPublisher publisher = new(factory);
+        await using NpgSqlSession session = new NpgSqlSession(npgSql);
+        RegisterTicketRabbitMqPublisher publisher = new(rabbitMq);
         NpgSqlRegisteredTicketsStorage storage = new(session);
         await session.UseTransaction(ct: ct);
 
@@ -38,7 +39,7 @@ public sealed class PublishPendingRegistrationTicketsToQueue(
                 await publisher.Publish(pending, ct: ct);
                 RegisterParserServiceTicket sent = pending.MarkSent();
                 succeeded.Add(sent);
-                LogSuccessPublishing(sent.GetSnapshot());
+                LogSuccessPublishing(sent);
             }
             catch(Exception ex)
             {
@@ -46,11 +47,11 @@ public sealed class PublishPendingRegistrationTicketsToQueue(
             }
         }
 
-        await storage.UpdateMany(succeeded, ct);
+        await storage.UpdateMany(succeeded);
         
         try
         {
-            await session.CommitTransaction(ct);
+            await session.UnsafeCommit(ct);
         }
         catch(Exception ex)
         {
@@ -58,9 +59,8 @@ public sealed class PublishPendingRegistrationTicketsToQueue(
         }
     }
 
-    private void LogSuccessPublishing(RegisterParserServiceTicketSnapshot snapshot)
+    private void LogSuccessPublishing(RegisterParserServiceTicket ticket)
     {
-        object[] logProperties = [snapshot.Id, snapshot.Type, snapshot.Payload, snapshot.WasSent];
         _logger.Information(
             """
             Published ticket info:
@@ -68,7 +68,11 @@ public sealed class PublishPendingRegistrationTicketsToQueue(
             Type: {Type}
             Payload: {Payload}
             Was sent: {WasSent}
-            """, logProperties);
+            """,
+            ticket.Id,
+            ticket.Type,
+            ticket.Payload,
+            ticket.WasSent);
     }
 
     private void LogFailurePublishing(Exception ex)

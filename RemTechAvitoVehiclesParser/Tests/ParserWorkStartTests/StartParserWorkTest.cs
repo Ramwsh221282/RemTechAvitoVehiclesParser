@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using ParsingSDK;
 using ParsingSDK.Parsing;
-using RemTechAvitoVehiclesParser.ParserWorkStages.Database;
-using RemTechAvitoVehiclesParser.ParserWorkStages.Models;
+using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Database;
+using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models;
+using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
+using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
 
 namespace Tests.ParserWorkStartTests;
 
@@ -43,7 +43,7 @@ public sealed class StartParserWorkTest(ParserWorkStartFixture fixture) : IClass
     {
         await using AsyncServiceScope scope = _sp.CreateAsyncScope();
         NpgSqlParserWorkStagesStorage workStages = scope.ServiceProvider.GetRequiredService<NpgSqlParserWorkStagesStorage>();
-        ParserWorkStageQuery query = new(Id: id, Name: WorkStageConstants.CatalogueStageName);
+        WorkStageQuery query = new(Id: id, Name: WorkStageConstants.CatalogueStageName);
         Maybe<ParserWorkStage> stage = await workStages.GetWorkStage(query);
         return stage.HasValue;
     }
@@ -51,9 +51,9 @@ public sealed class StartParserWorkTest(ParserWorkStartFixture fixture) : IClass
     private async Task<bool> EnsurePaginationEvaluated(Guid id)
     {
         await using AsyncServiceScope scope = _sp.CreateAsyncScope();
-        NpgSqlPaginationEvaluationParsersStorage storage = scope.ServiceProvider.GetRequiredService<NpgSqlPaginationEvaluationParsersStorage>();
+        NpgSqlPaginationParsingParsersStorage storage = scope.ServiceProvider.GetRequiredService<NpgSqlPaginationParsingParsersStorage>();
         PaginationEvaluationParsersQuery query = new(ParserId: id, LinksWithCurrentPage: true, LinksWithMaxPage: true);
-        Maybe<PaginationEvaluationParser> parser = await storage.GetParser(query);
+        Maybe<PaginationParsingParser> parser = await storage.GetParser(query);
         return parser.HasValue;
     }
     
@@ -61,8 +61,8 @@ public sealed class StartParserWorkTest(ParserWorkStartFixture fixture) : IClass
     {
         await using AsyncServiceScope scope = _sp.CreateAsyncScope();
         PaginationEvaluationParsersQuery query = new(ParserId: id);
-        NpgSqlPaginationEvaluationParsersStorage storage = scope.ServiceProvider.GetRequiredService<NpgSqlPaginationEvaluationParsersStorage>();
-        Maybe<PaginationEvaluationParser> parser = await storage.GetParser(query);
+        NpgSqlPaginationParsingParsersStorage storage = scope.ServiceProvider.GetRequiredService<NpgSqlPaginationParsingParsersStorage>();
+        Maybe<PaginationParsingParser> parser = await storage.GetParser(query);
         return parser.HasValue;
     }
 
@@ -70,7 +70,7 @@ public sealed class StartParserWorkTest(ParserWorkStartFixture fixture) : IClass
     {
         await using AsyncServiceScope scope = _sp.CreateAsyncScope();
         NpgSqlParserWorkStagesStorage storage = scope.ServiceProvider.GetRequiredService<NpgSqlParserWorkStagesStorage>();
-        ParserWorkStageQuery query = new(Name: "EVALUATION");
+        WorkStageQuery query = new(Name: "EVALUATION");
         Maybe<ParserWorkStage> stage = await storage.GetWorkStage(query);
         return stage.HasValue;
     }

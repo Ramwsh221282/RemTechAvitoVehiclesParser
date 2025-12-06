@@ -1,13 +1,13 @@
 ﻿using System.Text;
 using System.Text.Json;
 using RabbitMQ.Client;
+using RemTech.SharedKernel.Infrastructure.RabbitMq;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-using RemTechAvitoVehiclesParser.SharedDependencies.RabbitMq;
 
 namespace Tests.ParserWorkStartTests;
 
 public sealed class TestStartParserWorkPublisher(
-    RabbitMqConnectionFactory connectionFactory
+    RabbitMqConnectionSource connectionFactory
     )
 {
     private const string Queue = ConstantsForMainApplicationCommunication.ParsersQueue;
@@ -17,7 +17,7 @@ public sealed class TestStartParserWorkPublisher(
     
     public async Task Publish(Guid id, string domain, string type, IEnumerable<(Guid, string)> links)
     {
-        IConnection connection = await connectionFactory.GetConnection();
+        IConnection connection = await connectionFactory.GetConnection(CancellationToken.None);
         CreateChannelOptions options = new(
             publisherConfirmationsEnabled: true,
             publisherConfirmationTrackingEnabled: true);

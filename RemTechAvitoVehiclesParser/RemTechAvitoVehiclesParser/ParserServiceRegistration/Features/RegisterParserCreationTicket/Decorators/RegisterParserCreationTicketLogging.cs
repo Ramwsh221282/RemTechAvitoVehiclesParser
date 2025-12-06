@@ -9,22 +9,24 @@ public sealed class RegisterParserCreationTicketLogging(
 {
     private readonly Serilog.ILogger _logger = logger.ForContext<RegisterParserCreationTicketLogging>();
     
-    public async Task<RegisterParserServiceTicketSnapshot> Handle(
-        RegisterParserCreationTicketCommand command, 
-        CancellationToken ct = default)
+    public async Task<RegisterParserServiceTicket> Handle(RegisterParserCreationTicketCommand command, CancellationToken ct = default)
     {
         try
         {
-            RegisterParserServiceTicketSnapshot snapshot = await origin.Handle(command, ct);
-            object[] logProperties = [snapshot.Id, snapshot.Payload, snapshot.Type];
+            RegisterParserServiceTicket ticket = await origin.Handle(command, ct);
+            
             _logger.Information(
                 """
                 Registered parser creation ticket:
                 Id: {Id}
                 Payload: {Payload}
                 Type: {Type}  
-                """, logProperties);
-            return snapshot;
+                """,
+                ticket.Id,
+                ticket.Payload,
+                ticket.Type);
+            
+            return ticket;
         }
         catch(Exception ex)
         {

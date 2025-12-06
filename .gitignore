@@ -6,6 +6,8 @@
 # dotenv files
 .env
 
+nuget.config
+
 ./idea
 idea/
 

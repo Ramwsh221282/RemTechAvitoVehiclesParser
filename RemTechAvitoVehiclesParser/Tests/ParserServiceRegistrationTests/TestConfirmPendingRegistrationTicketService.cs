@@ -4,28 +4,29 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RemTech.SharedKernel.Infrastructure.RabbitMq;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.ConfirmPendingCreationTicket;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-using RemTechAvitoVehiclesParser.SharedDependencies.RabbitMq;
 
 namespace Tests.ParserServiceRegistrationTests;
 
 public sealed class TestConfirmPendingRegistrationTicketService(
     IServiceProvider sp,
     Serilog.ILogger logger,
-    RabbitMqConnectionFactory rabbitMqConnectionFactory
+    RabbitMqConnectionSource rabbitMqConnectionFactory
     ) : BackgroundService
 {
-    private const string Queue = ConstantsForMainApplicationCommunication.CurrentServiceType;
+    private const string Queue = ConstantsForMainApplicationCommunication.CurrentServiceDomain;
     private const string Exchange = ConstantsForMainApplicationCommunication.CurrentServiceType;
     private const string Type = "topic";
-    private const string RoutingKey = ConstantsForMainApplicationCommunication.CurrentServiceDomain;
+    private static readonly string RoutingKey = 
+        $"{ConstantsForMainApplicationCommunication.CurrentServiceDomain}{ConstantsForMainApplicationCommunication.CurrentServiceType}";
     private readonly Serilog.ILogger _logger = logger.ForContext<TestConfirmPendingRegistrationTicketService>();
     private IChannel _channel = null!;
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        IConnection connection = await rabbitMqConnectionFactory.GetConnection();
+        IConnection connection = await rabbitMqConnectionFactory.GetConnection(stoppingToken);
         _channel = await connection.CreateChannelAsync();
 
         await _channel.QueueDeclareAsync(

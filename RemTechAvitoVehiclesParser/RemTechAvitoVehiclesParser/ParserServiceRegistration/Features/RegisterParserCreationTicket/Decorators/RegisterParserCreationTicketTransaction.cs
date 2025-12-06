@@ -1,20 +1,20 @@
-﻿using RemTechAvitoVehiclesParser.ParserServiceRegistration.Models;
-using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
+﻿using RemTech.SharedKernel.Infrastructure.NpgSql;
+using RemTechAvitoVehiclesParser.ParserServiceRegistration.Models;
 
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.RegisterParserCreationTicket.Decorators;
 
 public sealed class RegisterParserCreationTicketTransaction(
-    IPostgreSqlAdapter session, 
+    NpgSqlSession session, 
     IRegisterParserCreationTicket origin) : 
     IRegisterParserCreationTicket
 {
-    public async Task<RegisterParserServiceTicketSnapshot> Handle(
+    public async Task<RegisterParserServiceTicket> Handle(
         RegisterParserCreationTicketCommand command, 
         CancellationToken ct = default)
     {
         await session.UseTransaction(ct);
-        RegisterParserServiceTicketSnapshot result = await origin.Handle(command, ct);
-        await session.CommitTransaction(ct);
+        RegisterParserServiceTicket result = await origin.Handle(command, ct);
+        await session.UnsafeCommit(ct);
         return result;
     }
 }

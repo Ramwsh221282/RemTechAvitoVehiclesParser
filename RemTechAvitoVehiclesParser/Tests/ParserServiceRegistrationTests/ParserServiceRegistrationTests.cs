@@ -19,10 +19,10 @@ public sealed class ParserServiceRegistrationTests(ParserServiceRegistrationFixt
         await using AsyncServiceScope scope = _sp.CreateAsyncScope();
         IRegisterParserCreationTicket register = scope.ServiceProvider.GetRequiredService<IRegisterParserCreationTicket>();
         RegisterParserCreationTicketCommand command = new("test-parser-domain", "test-parser-type");
-        RegisterParserServiceTicketSnapshot ticket = await register.Handle(command);
+        RegisterParserServiceTicket ticket = await register.Handle(command);
         await Task.Delay(TimeSpan.FromSeconds(10));
         Assert.NotEmpty(TestParserRegistrationTicketApprovalService.Messages);
-        RegisterParserServiceTicketSnapshot registeredTicket = await GetRegisteredTicket(ticket.Id);
+        RegisterParserServiceTicket registeredTicket = await GetRegisteredTicket(ticket.Id);
         using JsonDocument document = JsonDocument.Parse(registeredTicket.Payload);
         string type = document.RootElement.GetProperty("parser_type").GetString()!;
         string domain = document.RootElement.GetProperty("parser_domain").GetString()!;
@@ -31,18 +31,18 @@ public sealed class ParserServiceRegistrationTests(ParserServiceRegistrationFixt
         Assert.True(hasSentTickets);
         Assert.False(hasNotSentTickets);
         await PublishForConfirmation(ticket.Id, domain, type);
-        await Task.Delay(TimeSpan.FromSeconds(20));
+        await Task.Delay(TimeSpan.FromSeconds(30));
         bool hasNoTickets = await HasNoTicketsAtAll();
         Assert.True(hasNoTickets);
     }
 
-    private async Task<RegisterParserServiceTicketSnapshot> GetRegisteredTicket(Guid id)
+    private async Task<RegisterParserServiceTicket> GetRegisteredTicket(Guid id)
     {
         await using AsyncServiceScope scope = _sp.CreateAsyncScope();
         NpgSqlRegisteredTicketsStorage storage = scope.ServiceProvider.GetRequiredService<NpgSqlRegisteredTicketsStorage>();
         QueryRegisteredTicketArgs args = new(Id: id);
         Maybe<RegisterParserServiceTicket> ticket = await storage.GetTicket(args);
-        return ticket.Value.GetSnapshot();
+        return ticket.Value;
     }
 
     private async Task<bool> HasNoTicketsAtAll()
@@ -75,7 +75,8 @@ public sealed class ParserServiceRegistrationTests(ParserServiceRegistrationFixt
     private async Task PublishForConfirmation(Guid id, string domain, string type)
     {
         await using AsyncServiceScope scope = _sp.CreateAsyncScope();
-        PublisherToParserRegistrationTicketApproval publisher = scope.ServiceProvider.GetRequiredService<PublisherToParserRegistrationTicketApproval>();
+        PublisherToParserRegistrationTicketApproval publisher = 
+            scope.ServiceProvider.GetRequiredService<PublisherToParserRegistrationTicketApproval>();
         await publisher.Publish(id, domain, type);
     }
 }

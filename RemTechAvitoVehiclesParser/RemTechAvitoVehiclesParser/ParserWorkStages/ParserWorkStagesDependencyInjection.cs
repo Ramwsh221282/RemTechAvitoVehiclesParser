@@ -1,8 +1,12 @@
-﻿using RemTechAvitoVehiclesParser.ParserWorkStages.BackgroundTasks;
-using RemTechAvitoVehiclesParser.ParserWorkStages.Database;
-using RemTechAvitoVehiclesParser.ParserWorkStages.Features.SaveEvaluationParserWorkStage;
-using RemTechAvitoVehiclesParser.ParserWorkStages.Features.SaveEvaluationParserWorkStage.Decorators;
-using RemTechAvitoVehiclesParser.SharedDependencies.Quartz;
+﻿using RemTech.SharedKernel.Infrastructure.Quartz;
+using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.BackgroundTasks;
+using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Database;
+using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.BackgroundTasks;
+using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Database;
+using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.BackgroundTasks;
+using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
+using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Features.SaveEvaluationParserWorkStage;
+using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Features.SaveEvaluationParserWorkStage.Decorators;
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages;
 
@@ -20,14 +24,14 @@ public static class ParserWorkStagesDependencyInjection
         public void RegisterStorage()
         {
             services.AddScoped<NpgSqlParserWorkStagesStorage>();
-            services.AddScoped<NpgSqlPaginationEvaluationParsersStorage>();
+            services.AddScoped<NpgSqlPaginationParsingParsersStorage>();
             services.AddScoped<NpgSqlCataloguePageUrlsStorage>();
         }
 
         public void AddParserProcessingJobs()
         {
-            services.AddSingleton<ICronScheduleJob, CataloguePagesProcessingBackgroundTask>();
-            services.AddSingleton<ICronScheduleJob, CataloguePagesEvaluationBackgroundTask>();
+            services.AddSingleton<ICronScheduleJob, CataloguePagesPagesParsingBackgroundTask>();
+            services.AddSingleton<ICronScheduleJob, CataloguePaginationParsingBackgroundTask>();
             services.AddSingleton<ICronScheduleJob, SwitchToCatalogueStageBackgroundTask>();
             services.AddSingleton<ICronScheduleJob, ConcretePagesProcessingBackgroundTask>();
         }

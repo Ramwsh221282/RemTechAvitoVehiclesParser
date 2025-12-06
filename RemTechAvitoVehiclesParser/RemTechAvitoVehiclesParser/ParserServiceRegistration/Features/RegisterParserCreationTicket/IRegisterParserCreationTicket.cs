@@ -4,7 +4,5 @@ namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.Register
 
 public interface IRegisterParserCreationTicket
 {
-    Task<RegisterParserServiceTicketSnapshot> Handle(
-        RegisterParserCreationTicketCommand command, 
-        CancellationToken ct = default);
+    Task<RegisterParserServiceTicket> Handle(RegisterParserCreationTicketCommand command, CancellationToken ct = default);
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using RemTech.Tests.Shared;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 
@@ -16,8 +17,8 @@ public sealed class ParserServiceRegistrationFixture : WebApplicationFactory<Rem
         base.ConfigureWebHost(builder);
         builder.ConfigureServices(s =>
         {
-            s.ReconfigureDatabaseConfiguration(_dbContainer);
-            s.ReconfigureRabbitMqConfiguration(_rabbitMq);
+            s.ReconfigurePostgreSqlOptions(_dbContainer);
+            s.ReconfigureRabbitMqOptions(_rabbitMq);
             s.AddHostedService<TestParserRegistrationTicketApprovalService>();
             s.AddHostedService<TestConfirmPendingRegistrationTicketService>();
             s.AddScoped<PublisherToParserRegistrationTicketApproval>();

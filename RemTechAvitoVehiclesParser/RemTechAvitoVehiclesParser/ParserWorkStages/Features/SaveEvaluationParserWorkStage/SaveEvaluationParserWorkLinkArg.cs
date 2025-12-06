@@ -1,3 +1,0 @@
-﻿namespace RemTechAvitoVehiclesParser.ParserWorkStages.Features.SaveEvaluationParserWorkStage;
-
-public sealed record SaveEvaluationParserWorkLinkArg(Guid Id, string Url);

@@ -4,7 +4,5 @@ namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.ConfirmP
 
 public interface IConfirmPendingCreationTicket
 {
-    Task<RegisterParserServiceTicketSnapshot> Handle(
-        ConfirmPendingCreationTicketCommand command,
-        CancellationToken ct = default);
+    Task<RegisterParserServiceTicket> Handle(ConfirmPendingCreationTicketCommand command, CancellationToken ct = default);
 }

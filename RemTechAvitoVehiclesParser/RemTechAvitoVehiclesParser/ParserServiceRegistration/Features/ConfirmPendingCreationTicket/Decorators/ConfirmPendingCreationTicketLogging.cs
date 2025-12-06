@@ -10,15 +10,15 @@ public sealed class ConfirmPendingCreationTicketLogging(
 {
     private readonly Serilog.ILogger _logger = logger.ForContext<IConfirmPendingCreationTicket>();
     
-    public async Task<RegisterParserServiceTicketSnapshot> Handle(ConfirmPendingCreationTicketCommand command, CancellationToken ct = default)
+    public async Task<RegisterParserServiceTicket> Handle(ConfirmPendingCreationTicketCommand command, CancellationToken ct = default)
     {
         _logger.Information("Confirming pending creation ticket with ID: {Id}", command.Id);
         try
         {
-            RegisterParserServiceTicketSnapshot snapshot = await origin.Handle(command, ct);
+            RegisterParserServiceTicket snapshot = await origin.Handle(command, ct);
             string finishedDateInfo = snapshot.Finished.HasValue ? snapshot.Finished.Value.ToString("dd-MM-yy") : "no finish date";
             string createdDateInfo = snapshot.Created.ToString("dd-MM-yy");
-            object[] logParameters = [snapshot.Id, createdDateInfo, finishedDateInfo, snapshot.WasSent, snapshot.Payload];
+            
             _logger.Information("""
                                 Pending creation ticket confirmed:
                                 ID: {Id}
@@ -26,7 +26,13 @@ public sealed class ConfirmPendingCreationTicketLogging(
                                 Date Finished: {Finished}
                                 Was sent: {WasSent}
                                 Payload: {Payload}
-                                """, logParameters);
+                                """, 
+                                snapshot.Id, 
+                                createdDateInfo, 
+                                finishedDateInfo, 
+                                snapshot.WasSent, 
+                                snapshot.Payload);
+            
             return snapshot;
         }
         catch(Exception ex)

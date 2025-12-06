@@ -10,7 +10,7 @@ public sealed class RegisterParserCreationTicket(
 {
     private const string Type = ConstantsForMainApplicationCommunication.CreateParserRoutingKey;
     
-    public async Task<RegisterParserServiceTicketSnapshot> Handle(
+    public async Task<RegisterParserServiceTicket> Handle(
         RegisterParserCreationTicketCommand command, 
         CancellationToken ct = default)
     {
@@ -20,6 +20,6 @@ public sealed class RegisterParserCreationTicket(
             parserType: command.Type);
         
         await storage.Store(ticket, ct);
-        return ticket.GetSnapshot();
+        return ticket;
     }
 }

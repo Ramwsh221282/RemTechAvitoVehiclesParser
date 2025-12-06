@@ -1,32 +1,28 @@
 ﻿using System.Text;
 using System.Text.Json;
 using RabbitMQ.Client;
+using RemTech.SharedKernel.Infrastructure.RabbitMq;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Models;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-using RemTechAvitoVehiclesParser.SharedDependencies.RabbitMq;
-using RemTechAvitoVehiclesParser.SharedDependencies.Utilities.Snapshots;
 
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.RabbitMq;
 
-public sealed class RegisterTicketRabbitMqPublisher(RabbitMqConnectionFactory connectionFactory)
+public sealed class RegisterTicketRabbitMqPublisher(RabbitMqConnectionSource connectionFactory)
 {
     private const string Queue = ConstantsForMainApplicationCommunication.CreateParserExchange;
     private const string Exchange = ConstantsForMainApplicationCommunication.CreateParserRoutingKey;
     private const string Type = "topic";
     private const string RoutingKey = ConstantsForMainApplicationCommunication.CreateParserRoutingKey;
     
-    public async Task Publish<T>(
-        ISnapshotSource<T, RegisterParserServiceTicketSnapshot> snapshotSource,
-        CancellationToken ct = default) where T : class
+    public async Task Publish(RegisterParserServiceTicket ticket, CancellationToken ct = default)
     {
-        RegisterParserServiceTicketSnapshot snapshot = snapshotSource.GetSnapshot();
-        object normalizedPayload = CreateNormalizedPayload(snapshot);
+        object normalizedPayload = CreateNormalizedPayload(ticket);
         string jsonPayload = CreateJsonPayload(normalizedPayload);
         ReadOnlyMemory<byte> bytePayload = CreateByteArrayPayload(jsonPayload);
         await PublishMessage(connectionFactory, bytePayload, ct);
     }
     
-    private static object CreateNormalizedPayload(RegisterParserServiceTicketSnapshot snapshot)
+    private static object CreateNormalizedPayload(RegisterParserServiceTicket snapshot)
     {
         return new
         {
@@ -46,7 +42,7 @@ public sealed class RegisterTicketRabbitMqPublisher(RabbitMqConnectionFactory co
         return Encoding.UTF8.GetBytes(json);
     }
 
-    private static async Task PublishMessage(RabbitMqConnectionFactory factory, ReadOnlyMemory<byte> payload, CancellationToken ct)
+    private static async Task PublishMessage(RabbitMqConnectionSource factory, ReadOnlyMemory<byte> payload, CancellationToken ct)
     {
         CreateChannelOptions options = new(
             publisherConfirmationsEnabled: true,

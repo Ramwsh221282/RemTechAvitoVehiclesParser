@@ -1,5 +1,5 @@
-﻿using RemTechAvitoVehiclesParser.ResultsPublishing.BackgroundTasks;
-using RemTechAvitoVehiclesParser.SharedDependencies.Quartz;
+﻿using RemTech.SharedKernel.Infrastructure.Quartz;
+using RemTechAvitoVehiclesParser.ResultsPublishing.BackgroundTasks;
 
 namespace RemTechAvitoVehiclesParser.ResultsPublishing;
 

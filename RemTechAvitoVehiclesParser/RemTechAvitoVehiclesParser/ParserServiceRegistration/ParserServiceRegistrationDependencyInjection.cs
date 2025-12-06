@@ -1,11 +1,11 @@
-﻿using RemTechAvitoVehiclesParser.ParserServiceRegistration.BackgroundTasks;
+﻿using RemTech.SharedKernel.Infrastructure.Quartz;
+using RemTechAvitoVehiclesParser.ParserServiceRegistration.BackgroundTasks;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Database;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.ConfirmPendingCreationTicket;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.ConfirmPendingCreationTicket.Decorators;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.RegisterParserCreationTicket;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.RegisterParserCreationTicket.Decorators;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.RabbitMq;
-using RemTechAvitoVehiclesParser.SharedDependencies.Quartz;
 
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration;
 
@@ -21,7 +21,6 @@ public static class ParserServiceRegistrationDependencyInjection
             services.RegisterRegisteredTicketRabbitMqPublisher();
             services.RegisterPublishRegistrationTicketsJob();
             services.AddConfirmParserCreationTicketService();
-            services.RegisterRemoveConfirmiedRegistrationTickets();
         }
         
         private void AddRegisterParserCreationTicketCommand()
@@ -52,13 +51,8 @@ public static class ParserServiceRegistrationDependencyInjection
         {
             services.AddScoped<RegisterTicketRabbitMqPublisher>();
         }
-
-        public void RegisterRemoveConfirmiedRegistrationTickets()
-        {
-            services.AddSingleton<ICronScheduleJob, RemoveConfirmedRegistrationTicketsService>();
-        }
         
-        public void RegisterPublishRegistrationTicketsJob()
+        private void RegisterPublishRegistrationTicketsJob()
         {
             services.AddSingleton<ICronScheduleJob, PublishPendingRegistrationTicketsToQueue>();
         }

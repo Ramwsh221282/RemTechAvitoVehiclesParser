@@ -2,26 +2,27 @@
 using Microsoft.Extensions.Hosting;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using RemTechAvitoVehiclesParser.SharedDependencies.RabbitMq;
+using RemTech.SharedKernel.Infrastructure.RabbitMq;
+using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
 
 namespace Tests.ParserServiceRegistrationTests;
 
 public sealed class TestParserRegistrationTicketApprovalService(
-    RabbitMqConnectionFactory rabbitMqConnectionFactory,
+    RabbitMqConnectionSource rabbitMqConnectionFactory,
     Serilog.ILogger logger
     ) : BackgroundService
 {
     public static readonly List<string> Messages = [];
-    private const string Queue = "parsers";
-    private const string Exchange = "parsers";
+    private const string Queue = ConstantsForMainApplicationCommunication.CreateParserExchange;
+    private const string Exchange = ConstantsForMainApplicationCommunication.CreateParserRoutingKey;
     private const string Type = "topic";
-    private const string RoutingKey = "parsers.creation";
+    private const string RoutingKey = ConstantsForMainApplicationCommunication.CreateParserRoutingKey;
 
     private IChannel _channel = null!;
         
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        IConnection connection = await rabbitMqConnectionFactory.GetConnection();
+        IConnection connection = await rabbitMqConnectionFactory.GetConnection(stoppingToken);
         _channel = await connection.CreateChannelAsync();
 
         await _channel.QueueDeclareAsync(

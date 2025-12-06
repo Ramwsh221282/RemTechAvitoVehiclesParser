@@ -1,11 +1,11 @@
-﻿using ParsingSDK;
-using ParsingSDK.Parsing;
+﻿using ParsingSDK.Parsing;
 using Quartz;
-using RemTechAvitoVehiclesParser.ParserWorkStages.Database;
-using RemTechAvitoVehiclesParser.ParserWorkStages.Models;
-using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
-using RemTechAvitoVehiclesParser.SharedDependencies.Quartz;
-using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
+using RemTech.SharedKernel.Infrastructure.NpgSql;
+using RemTech.SharedKernel.Infrastructure.Quartz;
+using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Database;
+using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Models;
+using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
+using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 using RemTechAvitoVehiclesParser.Utilities.TextTransforming;
 
 namespace RemTechAvitoVehiclesParser.ResultsPublishing.BackgroundTasks;
@@ -13,7 +13,7 @@ namespace RemTechAvitoVehiclesParser.ResultsPublishing.BackgroundTasks;
 [DisallowConcurrentExecution]
 [CronSchedule("*/5 * * * * ?")]
 public sealed class ResultsPublishingBackgroundTask(
-    NpgSqlDataSourceFactory dataSourceFactory,
+    NpgSqlConnectionFactory connectionFactory,
     Serilog.ILogger logger,
     TextTransformerBuilder textTransformerBuilder
     ) : ICronScheduleJob
@@ -21,13 +21,13 @@ public sealed class ResultsPublishingBackgroundTask(
     public async Task Execute(IJobExecutionContext context)
     {
         CancellationToken ct = context.CancellationToken;
-        await using IPostgreSqlAdapter adapter = await dataSourceFactory.CreateAdapter(ct);
+        await using NpgSqlSession adapter = new(connectionFactory);
         NpgSqlParserWorkStagesStorage stagesStorage = new(adapter);
         NpgSqlPendingToPublishItemsStorage pendingItemsStorage = new(adapter);
 
         await adapter.UseTransaction(ct);
 
-        ParserWorkStageQuery stageQuery = new(Name: WorkStageConstants.FinalizationStage, WithLock: true );
+        WorkStageQuery stageQuery = new(Name: WorkStageConstants.FinalizationStage, WithLock: true );
         Maybe<ParserWorkStage> stage = await stagesStorage.GetWorkStage(stageQuery, ct);
         if (!stage.HasValue) return;
 
@@ -35,9 +35,9 @@ public sealed class ResultsPublishingBackgroundTask(
         PendingToPublishItem[] items = (await pendingItemsStorage.GetMany(itemsQuery, ct)).ToArray();
         if (items.Length == 0)
         {
-            ParserWorkStage sleeping = stage.Value.ChangeStage(new ParserWorkStage.SleepingWorkStage(stage.Value));
+            ParserWorkStage sleeping = stage.Value.ChangeStage(new SleepingWorkStage(stage.Value));
             await stagesStorage.Update(sleeping, ct);
-            await adapter.CommitTransaction(ct);
+            await adapter.UnsafeCommit(ct);
             logger.Information("Switched to sleeping work stage.");
             return;
         }
@@ -49,17 +49,15 @@ public sealed class ResultsPublishingBackgroundTask(
         
         foreach (PendingToPublishItem item in items)
         {
-            PendingToPublishItemSnapshot snapshot = item.GetSnapshot();
             string content = $"""
-                              {snapshot.Title}
-                              {string.Join(" ", snapshot.DescriptionList)}
-                              {string.Join(" ", snapshot.Characteristics)}
-                              {snapshot.Address}
-                              {snapshot.Price.ToString()} {snapshot.IsNds.ToString()}
+                              {item.Title}
+                              {string.Join(" ", item.DescriptionList)}
+                              {string.Join(" ", item.Characteristics)}
+                              {item.Address}
+                              {item.Price.ToString()} {item.IsNds.ToString()}
                               """;
             
             string transformed = transformer.TransformText(content);
-
             Directory.CreateDirectory(resultsDirectory);
             string filePath = Path.Combine(resultsDirectory, $"{Guid.NewGuid()}.txt");
             Result result = Result.CreateTextFile(transformed, filePath);
@@ -70,7 +68,7 @@ public sealed class ResultsPublishingBackgroundTask(
         }
 
         await pendingItemsStorage.UpdateMany(processed);
-        if (!await adapter.TransactionCommited(ct))
+        if (!await adapter.Commited(ct))
             logger.Error("Error at transaction commit.");
     }
 }

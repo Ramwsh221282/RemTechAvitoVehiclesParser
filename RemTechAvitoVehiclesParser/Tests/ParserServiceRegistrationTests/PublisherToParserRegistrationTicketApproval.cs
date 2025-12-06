@@ -1,21 +1,22 @@
 ﻿using System.Text;
 using System.Text.Json;
 using RabbitMQ.Client;
+using RemTech.SharedKernel.Infrastructure.RabbitMq;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-using RemTechAvitoVehiclesParser.SharedDependencies.RabbitMq;
 
 namespace Tests.ParserServiceRegistrationTests;
 
-public sealed class PublisherToParserRegistrationTicketApproval(RabbitMqConnectionFactory connectionFactory)
+public sealed class PublisherToParserRegistrationTicketApproval(RabbitMqConnectionSource connectionFactory)
 {
-    private const string Queue = ConstantsForMainApplicationCommunication.CurrentServiceType;
+    private const string Queue = ConstantsForMainApplicationCommunication.CurrentServiceDomain;
     private const string Exchange = ConstantsForMainApplicationCommunication.CurrentServiceType;
     private const string Type = "topic";
-    private const string RoutingKey = ConstantsForMainApplicationCommunication.CurrentServiceDomain;
+    private static readonly string RoutingKey = 
+            $"{ConstantsForMainApplicationCommunication.CurrentServiceDomain}{ConstantsForMainApplicationCommunication.CurrentServiceType}";
     
     public async Task Publish(Guid ticketId, string domain, string type)
     {
-        IConnection connection = await connectionFactory.GetConnection();
+        IConnection connection = await connectionFactory.GetConnection(CancellationToken.None);
         IChannel channel = await connection.CreateChannelAsync();
 
         await channel.QueueDeclareAsync(

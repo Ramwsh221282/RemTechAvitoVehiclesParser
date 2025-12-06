@@ -2,16 +2,13 @@
 using System.Text.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using RemTechAvitoVehiclesParser.ParserWorkStages.Features.SaveEvaluationParserWorkStage;
+using RemTech.SharedKernel.Infrastructure.RabbitMq;
+using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Features.SaveEvaluationParserWorkStage;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-using RemTechAvitoVehiclesParser.SharedDependencies.RabbitMq;
 
 namespace RemTechAvitoVehiclesParser.Parsing.BackgroundTasks;
 
-public sealed class ParserWorkStartListenerService(
-    Serilog.ILogger logger,
-    IServiceProvider sp,
-    RabbitMqConnectionFactory rabbitMqConnectionFactory
+public sealed class ParserWorkStartListenerService(Serilog.ILogger logger, IServiceProvider sp, RabbitMqConnectionSource rabbitMq
     ) 
     : BackgroundService
 {
@@ -24,7 +21,7 @@ public sealed class ParserWorkStartListenerService(
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        IConnection connection = await rabbitMqConnectionFactory.GetConnection(stoppingToken);
+        IConnection connection = await rabbitMq.GetConnection(stoppingToken);
         _channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
         await _channel.QueueDeclareAsync(

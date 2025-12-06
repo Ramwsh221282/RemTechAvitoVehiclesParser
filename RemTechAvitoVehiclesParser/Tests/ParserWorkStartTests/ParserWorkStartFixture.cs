@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using RemTechAvitoVehiclesParser.SharedDependencies;
+using RemTech.SharedKernel.Infrastructure;
+using RemTech.Tests.Shared;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 
@@ -17,8 +18,8 @@ public sealed class ParserWorkStartFixture : WebApplicationFactory<RemTechAvitoV
         base.ConfigureWebHost(builder);
         builder.ConfigureServices(s =>
         {
-            s.ReconfigureDatabaseConfiguration(_dbContainer);
-            s.ReconfigureRabbitMqConfiguration(_rabbitMqContainer);
+            s.ReconfigurePostgreSqlOptions(_dbContainer);
+            s.ReconfigureRabbitMqOptions(_rabbitMqContainer);
             s.AddScoped<TestStartParserWorkPublisher>();
             s.ReconfigureQuartzHostedService();
         });

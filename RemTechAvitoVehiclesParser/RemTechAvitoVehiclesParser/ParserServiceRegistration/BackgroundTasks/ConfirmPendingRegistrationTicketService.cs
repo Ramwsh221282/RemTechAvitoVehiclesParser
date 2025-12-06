@@ -2,16 +2,16 @@
 using System.Text.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RemTech.SharedKernel.Infrastructure.RabbitMq;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.ConfirmPendingCreationTicket;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-using RemTechAvitoVehiclesParser.SharedDependencies.RabbitMq;
 
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.BackgroundTasks;
 
 public sealed class ConfirmPendingRegistrationTicketService(
     IServiceProvider sp,
     Serilog.ILogger logger,
-    RabbitMqConnectionFactory rabbitMqConnectionFactory
+    RabbitMqConnectionSource rabbitMqConnectionFactory
     ) : BackgroundService
 {
     private const string Queue = ConstantsForMainApplicationCommunication.CurrentServiceType;
@@ -23,7 +23,8 @@ public sealed class ConfirmPendingRegistrationTicketService(
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        IConnection connection = await rabbitMqConnectionFactory.GetConnection();
+        CancellationToken ct = stoppingToken;
+        IConnection connection = await rabbitMqConnectionFactory.GetConnection(ct);
         _channel = await connection.CreateChannelAsync();
 
         await _channel.QueueDeclareAsync(
@@ -31,23 +32,20 @@ public sealed class ConfirmPendingRegistrationTicketService(
             durable: true,
             exclusive: false,
             autoDelete: false,
-            cancellationToken: stoppingToken
-            );
+            cancellationToken: ct);
 
         await _channel.ExchangeDeclareAsync(
             exchange: Exchange,
             type: Type,
             autoDelete: false,
             durable: true,
-            cancellationToken: stoppingToken
-            );
+            cancellationToken: ct);
 
         await _channel.QueueBindAsync(
             queue: Queue,
             exchange: Exchange,
             routingKey: RoutingKey,
-            cancellationToken: stoppingToken
-            );
+            cancellationToken: ct);
 
         AsyncEventingBasicConsumer consumer = new(_channel);
         consumer.ReceivedAsync += Handler();
@@ -56,8 +54,7 @@ public sealed class ConfirmPendingRegistrationTicketService(
             queue: Queue,
             autoAck: false,
             consumer: consumer,
-            cancellationToken: stoppingToken
-        );
+            cancellationToken: ct);
     }
 
     private AsyncEventHandler<BasicDeliverEventArgs> Handler() => async (_, @event) =>

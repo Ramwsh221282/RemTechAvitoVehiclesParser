@@ -1,9 +1,8 @@
 ﻿using RemTechAvitoVehiclesParser.ParserServiceRegistration.Models;
-using RemTechAvitoVehiclesParser.SharedDependencies.Utilities.Snapshots;
 
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Database;
 
-public sealed class NpgSqlRegisteredTicketRow : ISnapshotSource<NpgSqlRegisteredTicketRow, RegisterParserServiceTicketSnapshot>
+public sealed class NpgSqlRegisteredTicketRow
 {
     public required Guid Id { get; init; }
     public required string Type { get; init; }
@@ -12,8 +11,16 @@ public sealed class NpgSqlRegisteredTicketRow : ISnapshotSource<NpgSqlRegistered
     public required DateTime? Finished { get; init; }
     public required bool WasSent { get; init; }
     
-    public RegisterParserServiceTicketSnapshot GetSnapshot()
+    public RegisterParserServiceTicket ToModel()
     {
-        return new RegisterParserServiceTicketSnapshot(Id, Type, Payload, Created, Finished, WasSent);
+        return RegisterParserServiceTicket.From(
+            this,
+            idMap: d => d.Id,
+            typeMap: d => d.Type,
+            payloadMap: d => d.Payload,
+            createdMap: d => d.Created,
+            finishedMap: d => d.Finished,
+            d => d.WasSent
+        );
     }
 }
