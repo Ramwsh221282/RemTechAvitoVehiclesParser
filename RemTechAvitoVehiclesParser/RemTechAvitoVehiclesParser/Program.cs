@@ -1,6 +1,34 @@
-var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
+using RemTechAvitoVehiclesParser.ParserServiceRegistration;
+using RemTechAvitoVehiclesParser.ParserWorkStages;
+using RemTechAvitoVehiclesParser.Parsing;
+using RemTechAvitoVehiclesParser.ResultsPublishing;
+using RemTechAvitoVehiclesParser.SharedDependencies;
+using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
+using RemTechAvitoVehiclesParser.Utilities;
 
-app.MapGet("/", () => "Hello World!");
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+builder.Services.RegisterUtilities();
+builder.Services.RegisterParserServiceRegistrationContext();
+builder.Services.RegisterParserWorkStagesContext();
+builder.Services.RegisterParsingContext();
+builder.Services.RegisterResultPublishing();
+builder.Services.RegisterSharedDependencies();
+
+WebApplication app = builder.Build();
+
+app.Services.ApplyDatabaseMigrations();
+
+await app.Services.RequireParserRegistration(
+    ConstantsForMainApplicationCommunication.CurrentServiceDomain, 
+    ConstantsForMainApplicationCommunication.CurrentServiceType);
 
 app.Run();
+
+namespace RemTechAvitoVehiclesParser
+{
+    public partial class Program
+    {
+    
+    }
+}
