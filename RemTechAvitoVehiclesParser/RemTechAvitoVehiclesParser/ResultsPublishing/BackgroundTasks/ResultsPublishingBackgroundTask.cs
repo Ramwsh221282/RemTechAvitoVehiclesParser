@@ -1,4 +1,6 @@
-﻿using Quartz;
+﻿using ParsingSDK;
+using ParsingSDK.Parsing;
+using Quartz;
 using RemTechAvitoVehiclesParser.ParserWorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.Models;
 using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;

@@ -1,4 +1,5 @@
-﻿using Quartz;
+﻿using ParsingSDK.Infrastructure.PostgreSql;
+using Quartz;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.RegisterParserCreationTicket;
 using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
 using RemTechAvitoVehiclesParser.SharedDependencies.Quartz;

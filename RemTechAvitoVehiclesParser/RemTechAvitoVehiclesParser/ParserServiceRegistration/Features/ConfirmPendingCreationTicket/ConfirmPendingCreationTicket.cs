@@ -1,4 +1,6 @@
-﻿using RemTechAvitoVehiclesParser.ParserServiceRegistration.Database;
+﻿using ParsingSDK;
+using ParsingSDK.Parsing;
+using RemTechAvitoVehiclesParser.ParserServiceRegistration.Database;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Models;
 using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
 

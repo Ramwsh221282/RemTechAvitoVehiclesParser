@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Npgsql;
+using ParsingSDK.Infrastructure.PostgreSql;
 
 namespace RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
 

@@ -1,5 +1,7 @@
 ﻿using System.Data;
 using Dapper;
+using ParsingSDK;
+using ParsingSDK.Parsing;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration.Models;
 using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
 using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;

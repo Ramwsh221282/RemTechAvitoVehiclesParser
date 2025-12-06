@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using ParsingSDK;
+using ParsingSDK.Parsing;
 using RemTechAvitoVehiclesParser.Parsing;
 using Serilog;
 

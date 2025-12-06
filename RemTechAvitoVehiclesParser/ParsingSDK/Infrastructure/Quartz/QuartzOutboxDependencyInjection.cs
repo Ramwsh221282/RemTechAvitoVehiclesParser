@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 
 namespace RemTechAvitoVehiclesParser.SharedDependencies.Quartz;

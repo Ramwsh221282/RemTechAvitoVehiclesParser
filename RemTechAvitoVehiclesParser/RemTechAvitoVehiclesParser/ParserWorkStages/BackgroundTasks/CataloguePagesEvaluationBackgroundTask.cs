@@ -1,4 +1,6 @@
-﻿using PuppeteerSharp;
+﻿using ParsingSDK;
+using ParsingSDK.Parsing;
+using PuppeteerSharp;
 using Quartz;
 using RemTechAvitoVehiclesParser.ParserWorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.Models;

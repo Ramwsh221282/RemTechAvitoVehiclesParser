@@ -1,6 +1,6 @@
 ﻿using System.Data;
 using Dapper;
-using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
+using ParsingSDK.Parsing;
 
 namespace RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
 

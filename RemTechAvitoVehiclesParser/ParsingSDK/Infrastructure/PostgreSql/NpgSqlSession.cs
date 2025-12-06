@@ -1,9 +1,10 @@
 using System.Data;
 using Dapper;
 using Npgsql;
-using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
+using ParsingSDK.Parsing;
+using RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
 
-namespace RemTechAvitoVehiclesParser.SharedDependencies.PostgreSql;
+namespace ParsingSDK.Infrastructure.PostgreSql;
 
 public sealed class NpgSqlSession(NpgSqlDataSourceFactory factory) : IPostgreSqlAdapter
 {

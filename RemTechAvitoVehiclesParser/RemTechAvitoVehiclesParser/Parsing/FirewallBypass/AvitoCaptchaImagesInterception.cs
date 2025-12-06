@@ -1,4 +1,6 @@
-﻿using PuppeteerSharp;
+﻿using ParsingSDK;
+using ParsingSDK.Parsing;
+using PuppeteerSharp;
 using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
 
 namespace RemTechAvitoVehiclesParser.Parsing.FirewallBypass;

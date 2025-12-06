@@ -1,4 +1,6 @@
-﻿using PuppeteerSharp;
+﻿using ParsingSDK;
+using ParsingSDK.Parsing;
+using PuppeteerSharp;
 using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
 using RemTechAvitoVehiclesParser.SharedDependencies.Utilities.Snapshots;
 using RemTechAvitoVehiclesParser.Utilities.TextTransforming;

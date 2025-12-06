@@ -1,3 +1,4 @@
+using ParsingSDK;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration;
 using RemTechAvitoVehiclesParser.ParserWorkStages;
 using RemTechAvitoVehiclesParser.Parsing;
@@ -11,7 +12,8 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Services.RegisterUtilities();
 builder.Services.RegisterParserServiceRegistrationContext();
 builder.Services.RegisterParserWorkStagesContext();
-builder.Services.RegisterParsingContext();
+builder.Services.RegisterParserDependencies();
+builder.Services.RegisterAvitoParsing();
 builder.Services.RegisterResultPublishing();
 builder.Services.RegisterSharedDependencies();
 
