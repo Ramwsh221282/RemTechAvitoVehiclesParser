@@ -1,11 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
-using Quartz;
-using Testcontainers.PostgreSql;
-using Testcontainers.RabbitMq;
-
-namespace Tests;
+﻿namespace Tests;
 
 // public static class TestsExtensions
 // {

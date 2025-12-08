@@ -1,4 +1,5 @@
 using ParsingSDK;
+using ParsingSDK.TextProcessing;
 using RemTech.SharedKernel.Infrastructure;
 using RemTechAvitoVehiclesParser.ParserServiceRegistration;
 using RemTechAvitoVehiclesParser.ParserWorkStages;
@@ -6,12 +7,11 @@ using RemTechAvitoVehiclesParser.Parsing;
 using RemTechAvitoVehiclesParser.ResultsPublishing;
 using RemTechAvitoVehiclesParser.SharedDependencies;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-using RemTechAvitoVehiclesParser.Utilities;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbUpgrader();
-builder.Services.RegisterUtilities();
+builder.Services.RegisterTextTransformerBuilder();
 builder.Services.RegisterParserServiceRegistrationContext();
 builder.Services.RegisterParserWorkStagesContext();
 builder.Services.RegisterParserDependencies();

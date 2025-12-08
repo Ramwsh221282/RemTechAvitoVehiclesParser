@@ -1,4 +1,5 @@
 ﻿using ParsingSDK.Parsing;
+using ParsingSDK.TextProcessing;
 using PuppeteerSharp;
 using Quartz;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
@@ -10,7 +11,6 @@ using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 using RemTechAvitoVehiclesParser.Parsing;
-using RemTechAvitoVehiclesParser.Utilities.TextTransforming;
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.BackgroundTasks;
 

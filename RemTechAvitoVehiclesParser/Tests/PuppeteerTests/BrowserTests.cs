@@ -1,11 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using ParsingSDK;
 using ParsingSDK.Parsing;
+using ParsingSDK.TextProcessing;
 using PuppeteerSharp;
 using RemTechAvitoVehiclesParser.Parsing;
 using RemTechAvitoVehiclesParser.Parsing.FirewallBypass;
-using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
-using RemTechAvitoVehiclesParser.Utilities.TextTransforming;
 
 namespace Tests.PuppeteerTests;
 

@@ -1,8 +1,6 @@
-using ParsingSDK;
 using ParsingSDK.Parsing;
 using PuppeteerSharp;
 using PuppeteerSharp.Input;
-using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
 
 namespace RemTechAvitoVehiclesParser.Parsing.FirewallBypass;
 

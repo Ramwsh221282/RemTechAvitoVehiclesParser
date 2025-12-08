@@ -1,4 +1,5 @@
 ﻿using ParsingSDK.Parsing;
+using ParsingSDK.TextProcessing;
 using Quartz;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
 using RemTech.SharedKernel.Infrastructure.Quartz;
@@ -6,7 +7,6 @@ using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Database
 using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
-using RemTechAvitoVehiclesParser.Utilities.TextTransforming;
 
 namespace RemTechAvitoVehiclesParser.ResultsPublishing.BackgroundTasks;
 

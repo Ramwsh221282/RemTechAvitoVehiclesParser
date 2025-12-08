@@ -1,8 +1,5 @@
-﻿using ParsingSDK;
-using ParsingSDK.Parsing;
+﻿using ParsingSDK.Parsing;
 using PuppeteerSharp;
-using RemTechAvitoVehiclesParser.Parsing;
-using RemTechAvitoVehiclesParser.SharedDependencies.Utilities;
 
 namespace Tests.PuppeteerTests;
 

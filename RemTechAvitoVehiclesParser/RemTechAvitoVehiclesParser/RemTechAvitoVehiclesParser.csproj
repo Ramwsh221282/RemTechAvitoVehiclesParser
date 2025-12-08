@@ -21,4 +21,8 @@
         <EmbeddedResource Include="SharedDependencies\PostgreSql\Migrations\001.AvitoParser_Initial.sql" />
     </ItemGroup>
     
+    <ItemGroup>
+      <Folder Include="Utilities\" />
+    </ItemGroup>
+    
 </Project>
