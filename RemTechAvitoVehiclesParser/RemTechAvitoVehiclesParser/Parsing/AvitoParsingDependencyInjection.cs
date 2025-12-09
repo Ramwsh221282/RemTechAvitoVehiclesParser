@@ -8,13 +8,7 @@ public static class AvitoParsingDependencyInjection
     {
         public void RegisterAvitoParsing()
         {
-            services.AddBypassFactory();
             services.AddParserWorkStartEventListener();
-        }
-        
-        private void AddBypassFactory()
-        {
-            services.AddSingleton<AvitoBypassFactory>();
         }
         
         private void AddParserWorkStartEventListener()

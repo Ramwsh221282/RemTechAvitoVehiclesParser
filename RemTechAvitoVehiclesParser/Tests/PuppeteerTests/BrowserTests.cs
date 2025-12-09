@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AvitoFirewallBypass;
+using Microsoft.Extensions.DependencyInjection;
 using ParsingSDK.Parsing;
 using ParsingSDK.TextProcessing;
 using PuppeteerSharp;
 using RemTechAvitoVehiclesParser.Parsing;
-using RemTechAvitoVehiclesParser.Parsing.FirewallBypass;
 
 namespace Tests.PuppeteerTests;
 
