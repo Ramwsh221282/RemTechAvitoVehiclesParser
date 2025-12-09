@@ -1,4 +1,5 @@
-﻿using ParsingSDK.Parsing;
+﻿using AvitoFirewallBypass;
+using ParsingSDK.Parsing;
 using PuppeteerSharp;
 using Quartz;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
@@ -7,7 +8,6 @@ using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
-using RemTechAvitoVehiclesParser.Parsing;
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.BackgroundTasks;
 

@@ -1,4 +1,5 @@
-﻿using ParsingSDK.Parsing;
+﻿using AvitoFirewallBypass;
+using ParsingSDK.Parsing;
 using ParsingSDK.TextProcessing;
 using PuppeteerSharp;
 using RemTechAvitoVehiclesParser.SharedDependencies.Utilities.Snapshots;
