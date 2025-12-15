@@ -19,11 +19,11 @@ public sealed class TestConfirmPendingRegistrationTicketService(
     private const string Queue = ConstantsForMainApplicationCommunication.CurrentServiceDomain;
     private const string Exchange = ConstantsForMainApplicationCommunication.CurrentServiceType;
     private const string Type = "topic";
-    private static readonly string RoutingKey = 
+    private static readonly string RoutingKey =
         $"{ConstantsForMainApplicationCommunication.CurrentServiceDomain}{ConstantsForMainApplicationCommunication.CurrentServiceType}";
     private readonly Serilog.ILogger _logger = logger.ForContext<TestConfirmPendingRegistrationTicketService>();
     private IChannel _channel = null!;
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         IConnection connection = await rabbitMqConnectionFactory.GetConnection(stoppingToken);
@@ -79,7 +79,7 @@ public sealed class TestConfirmPendingRegistrationTicketService(
             await confirm.Handle(command);
             _logger.Information("Handled confirmation for {Id} {Domain} {Type}", id, parserDomain, parserType);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _logger.Error(ex, "Error processing parser registration confirmation.");
         }

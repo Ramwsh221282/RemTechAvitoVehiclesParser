@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using ParsingSDK.Parsing;
-using RemTechAvitoVehiclesParser.Parsing;
 using Serilog;
 
 namespace Tests.PuppeteerTests;
@@ -10,7 +9,7 @@ public sealed class PuppeteerTestFixture : IAsyncLifetime
     private readonly IServiceProvider _sp;
 
     public IServiceProvider Services => _sp;
-    
+
     public PuppeteerTestFixture()
     {
         IServiceCollection services = new ServiceCollection();
@@ -20,7 +19,7 @@ public sealed class PuppeteerTestFixture : IAsyncLifetime
         services.AddSingleton<BrowserFactory>();
         _sp = services.BuildServiceProvider();
     }
-    
+
     public async Task InitializeAsync()
     {
         BrowserDownloader downloader = _sp.GetRequiredService<BrowserDownloader>();

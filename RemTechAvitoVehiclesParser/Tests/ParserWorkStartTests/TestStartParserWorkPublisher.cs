@@ -14,7 +14,7 @@ public sealed class TestStartParserWorkPublisher(
     private const string Exchange = ConstantsForMainApplicationCommunication.ParsersExchange;
     private const string Type = "topic";
     private static readonly string RoutingKey = $"start.{ConstantsForMainApplicationCommunication.CurrentServiceDomain}.{ConstantsForMainApplicationCommunication.CurrentServiceType}";
-    
+
     public async Task Publish(Guid id, string domain, string type, IEnumerable<(Guid, string)> links)
     {
         IConnection connection = await connectionFactory.GetConnection(CancellationToken.None);
@@ -56,7 +56,7 @@ public sealed class TestStartParserWorkPublisher(
         ReadOnlyMemory<byte> bytes = Encoding.UTF8.GetBytes(json);
 
         BasicProperties properties = new() { Persistent = true };
-        
+
         await channel.BasicPublishAsync(
             exchange: Exchange,
             routingKey: RoutingKey,

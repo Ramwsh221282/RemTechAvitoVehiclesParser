@@ -27,7 +27,7 @@ public static class PaginationParsingParserLinkImplementation
                     Parser link has no current page initialized.
                     """
                 );
-        
+
             if (!origin.MaxPage.HasValue)
                 throw new InvalidOperationException(
                     """
@@ -35,7 +35,7 @@ public static class PaginationParsingParserLinkImplementation
                     Parser link has no max page initialized.
                     """
                 );
-        
+
             int pageCounter = origin.CurrentPage.Value;
             List<CataloguePageUrl> urls = [];
             while (pageCounter <= origin.MaxPage.Value)
@@ -45,10 +45,10 @@ public static class PaginationParsingParserLinkImplementation
                 urls.Add(new CataloguePageUrl(Id: id, LinkId: origin.Id, Url: urlValue, Processed: false, RetryCount: 0, []));
                 pageCounter++;
             }
-        
+
             return urls.ToArray();
         }
-        
+
         public PaginationParsingParserLink IncrementCurrentPage()
         {
             if (!origin.CurrentPage.HasValue)
@@ -61,7 +61,7 @@ public static class PaginationParsingParserLinkImplementation
             int nextCurrentPage = origin.CurrentPage.Value + 1;
             return origin with { CurrentPage = nextCurrentPage };
         }
-    
+
         public PaginationParsingParserLink AddPagination(int currentPage, int maxPage)
         {
             if (origin.CurrentPage.HasValue && origin.MaxPage.HasValue)

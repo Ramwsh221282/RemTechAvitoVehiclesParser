@@ -48,7 +48,7 @@ public sealed class NpgSqlRegisteredTicketsStorage(NpgSqlSession session)
         IEnumerable<NpgSqlRegisteredTicketRow> rows = await session.QueryMultipleRows<NpgSqlRegisteredTicketRow>(command);
         return rows.ToModels();
     }
-    
+
     public async Task Update(RegisterParserServiceTicket ticket, CancellationToken ct = default)
     {
         const string sql = """
@@ -60,7 +60,7 @@ public sealed class NpgSqlRegisteredTicketsStorage(NpgSqlSession session)
         CommandDefinition command = session.FormCommand(sql, ticket.ExtractParameters(), ct);
         await session.Execute(command);
     }
-    
+
     public async Task Store(RegisterParserServiceTicket ticket, CancellationToken ct = default)
     {
         const string sql = """
@@ -72,14 +72,14 @@ public sealed class NpgSqlRegisteredTicketsStorage(NpgSqlSession session)
         CommandDefinition command = session.FormCommand(sql, ticket.ExtractParameters(), ct);
         await session.Execute(command);
     }
-    
+
     public async Task Clear(CancellationToken ct = default)
     {
         const string sql = "DELETE FROM avito_parser_module.parser_tickets";
         CommandDefinition command = new(sql, cancellationToken: ct);
         await session.Execute(command);
     }
-    
+
     public async Task UpdateMany(IEnumerable<RegisterParserServiceTicket> tickets)
     {
         const string sql = """

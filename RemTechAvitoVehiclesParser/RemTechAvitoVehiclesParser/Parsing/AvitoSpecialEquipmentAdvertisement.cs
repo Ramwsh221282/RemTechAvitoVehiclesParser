@@ -62,7 +62,7 @@ public sealed class AvitoSpecialEquipmentAdvertisement : ISnapshotSource<AvitoSp
         _properties.Add(propertyName, descriptions);
         return true;
     }
-    
+
     public async Task<bool> HasPrice()
     {
         const string pricePropertyName = "price";
@@ -125,10 +125,10 @@ public sealed class AvitoSpecialEquipmentAdvertisement : ISnapshotSource<AvitoSp
         _properties.Add(addressPropertyName, transformed);
         return true;
     }
-    
+
     public static async Task<AvitoSpecialEquipmentAdvertisement> Create(
-        IPage page, 
-        string itemUrl, 
+        IPage page,
+        string itemUrl,
         AvitoBypassFactory bypassFactory)
     {
         await page.NavigatePage(itemUrl);
@@ -136,7 +136,7 @@ public sealed class AvitoSpecialEquipmentAdvertisement : ISnapshotSource<AvitoSp
         await page.ScrollBottom();
         return new AvitoSpecialEquipmentAdvertisement(page, bypassed);
     }
-    
+
     private AvitoSpecialEquipmentAdvertisement(IPage page, bool bypassedBlock)
     {
         _page = page;

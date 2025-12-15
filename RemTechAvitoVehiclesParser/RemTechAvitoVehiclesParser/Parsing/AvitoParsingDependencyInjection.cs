@@ -10,7 +10,7 @@ public static class AvitoParsingDependencyInjection
         {
             services.AddParserWorkStartEventListener();
         }
-        
+
         private void AddParserWorkStartEventListener()
         {
             services.AddHostedService<ParserWorkStartListenerService>();

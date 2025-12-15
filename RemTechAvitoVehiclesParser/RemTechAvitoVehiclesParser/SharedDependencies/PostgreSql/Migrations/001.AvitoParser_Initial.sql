@@ -13,9 +13,7 @@ CREATE TABLE IF NOT EXISTS avito_parser_module.parser_tickets
 CREATE TABLE IF NOT EXISTS avito_parser_module.work_stages
 (
   id uuid primary key,
-  name varchar(128) not null,
-  created timestamptz not null,
-  finished timestamptz
+  name varchar(128) not null  
 );
 
 CREATE TABLE IF NOT EXISTS avito_parser_module.pagination_evaluating_parsers

@@ -29,7 +29,7 @@ public sealed class NpgSqlCataloguePageUrlsStorage(NpgSqlSession session)
         IEnumerable<object> parameters = urls.Select(u => u.ExtractParameters());
         await session.ExecuteBulk(sql, parameters);
     }
-    
+
     public async Task<Maybe<CataloguePageUrl>> GetSingle(CataloguePageUrlQuery query, CancellationToken ct = default)
     {
         (DynamicParameters parameters, string filterSql) = query.WhereClause();
@@ -45,7 +45,7 @@ public sealed class NpgSqlCataloguePageUrlsStorage(NpgSqlSession session)
         NpgSqlCataloguePageUrlRow? row = await session.QueryMaybeRow<NpgSqlCataloguePageUrlRow>(command);
         return row.MaybeUrl();
     }
-    
+
     public async Task<IEnumerable<CataloguePageUrl>> GetMany(CataloguePageUrlQuery query, CancellationToken ct = default)
     {
         (DynamicParameters parameters, string filterSql) = query.WhereClause();

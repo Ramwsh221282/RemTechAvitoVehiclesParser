@@ -22,7 +22,7 @@ public static class ParserServiceRegistrationDependencyInjection
             services.RegisterPublishRegistrationTicketsJob();
             services.AddConfirmParserCreationTicketService();
         }
-        
+
         private void AddRegisterParserCreationTicketCommand()
         {
             services.AddScoped<IRegisterParserCreationTicket, RegisterParserCreationTicket>();
@@ -41,7 +41,7 @@ public static class ParserServiceRegistrationDependencyInjection
         {
             services.AddHostedService<ConfirmPendingRegistrationTicketService>();
         }
-        
+
         private void RegisterNpgSqlStorage()
         {
             services.AddScoped<NpgSqlRegisteredTicketsStorage>();
@@ -51,7 +51,7 @@ public static class ParserServiceRegistrationDependencyInjection
         {
             services.AddScoped<RegisterTicketRabbitMqPublisher>();
         }
-        
+
         private void RegisterPublishRegistrationTicketsJob()
         {
             services.AddSingleton<ICronScheduleJob, PublishPendingRegistrationTicketsToQueue>();

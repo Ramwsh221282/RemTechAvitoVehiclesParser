@@ -10,7 +10,7 @@ public sealed class NpgSqlRegisteredTicketRow
     public required DateTime Created { get; init; }
     public required DateTime? Finished { get; init; }
     public required bool WasSent { get; init; }
-    
+
     public RegisterParserServiceTicket ToModel()
     {
         return RegisterParserServiceTicket.From(

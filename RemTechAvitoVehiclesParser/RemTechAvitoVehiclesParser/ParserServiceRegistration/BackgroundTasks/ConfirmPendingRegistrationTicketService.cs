@@ -20,7 +20,7 @@ public sealed class ConfirmPendingRegistrationTicketService(
     private const string RoutingKey = ConstantsForMainApplicationCommunication.CurrentServiceDomain;
     private readonly Serilog.ILogger _logger = logger.ForContext<ConfirmPendingRegistrationTicketService>();
     private IChannel _channel = null!;
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         CancellationToken ct = stoppingToken;
@@ -70,7 +70,7 @@ public sealed class ConfirmPendingRegistrationTicketService(
             IConfirmPendingCreationTicket confirm = scope.ServiceProvider.GetRequiredService<IConfirmPendingCreationTicket>();
             await confirm.Handle(command);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _logger.Error(ex, "Error processing parser registration confirmation.");
         }

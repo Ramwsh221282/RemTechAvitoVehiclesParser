@@ -43,7 +43,7 @@ public sealed class NpgSqlPaginationParsingParsersStorage(NpgSqlSession session)
         await session.Execute(command);
         if (withLinks) await SaveLinks(parser);
     }
-    
+
     public async Task<Maybe<PaginationParsingParser>> GetParser(PaginationEvaluationParsersQuery query, CancellationToken ct = default)
     {
         (DynamicParameters parameters, string filterSql) = query.WhereClause();
@@ -68,7 +68,7 @@ public sealed class NpgSqlPaginationParsingParsersStorage(NpgSqlSession session)
         CommandDefinition command = session.FormCommand(sql, parameters, ct);
         using IDataReader reader = await session.ExecuteReader(command, ct);
         Dictionary<Guid, PaginationParsingParser> readingScope = [];
-        
+
         while (reader.Read())
         {
             Guid parserId = reader.GetGuid(reader.GetOrdinal("parser_id"));
@@ -79,24 +79,24 @@ public sealed class NpgSqlPaginationParsingParsersStorage(NpgSqlSession session)
                 parser = new(parserId, parserDomain, parserType, []);
                 readingScope.Add(parserId, parser);
             }
-            
+
             Guid linkId = reader.GetGuid(reader.GetOrdinal("link_id"));
             string linkUrl = reader.GetString(reader.GetOrdinal("url"));
             bool wasProcessed = reader.GetBoolean(reader.GetOrdinal("was_processed"));
-            
+
             int currentPageOrdinal = reader.GetOrdinal("current_page");
             int? currentPage = reader.IsDBNull(currentPageOrdinal) ? null : reader.GetInt32(currentPageOrdinal);
-            
+
             int maxPageOrdinal = reader.GetOrdinal("max_page");
             int? maxPage = reader.IsDBNull(maxPageOrdinal) ? null : reader.GetInt32(maxPageOrdinal);
-            
+
             PaginationParsingParserLink link = new(linkId, parserId, linkUrl, wasProcessed, currentPage, maxPage);
             readingScope[parserId] = parser.AddLink(link);
         }
 
         return readingScope.Count == 0 ? Maybe<PaginationParsingParser>.None() : Maybe<PaginationParsingParser>.Some(readingScope.First().Value);
     }
-    
+
     public async Task UpdateLink(PaginationParsingParserLink link, CancellationToken ct = default)
     {
         const string sql = """
@@ -109,7 +109,21 @@ public sealed class NpgSqlPaginationParsingParsersStorage(NpgSqlSession session)
         CommandDefinition command = session.FormCommand(sql, link.ExtractParameters(), ct);
         await session.Execute(command);
     }
-    
+
+    public async Task UpdateManyLinks(IEnumerable<PaginationParsingParserLink> links)
+    {
+        const string sql =
+        """
+        UPDATE avito_parser_module.pagination_evaluating_parser_links
+        SET was_processed = @was_processed,
+        current_page = @current_page,
+        max_page = @max_page
+        WHERE id = @id 
+        """;
+        IEnumerable<object> parameters = links.Select(l => l.ExtractParameters());
+        await session.ExecuteBulk(sql, parameters);
+    }
+
     private async Task SaveLinks(PaginationParsingParser parser)
     {
         const string sql = """

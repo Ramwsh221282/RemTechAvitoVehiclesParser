@@ -11,7 +11,7 @@ public sealed class AvitoCatalogueItem
 
     private AvitoCatalogueItem(string itemId, string itemUrl, IEnumerable<string> imageUrls)
     {
-        ImageUrls = [..imageUrls];
+        ImageUrls = [.. imageUrls];
         ItemId = itemId;
         ItemUrl = itemUrl;
     }
@@ -19,7 +19,7 @@ public sealed class AvitoCatalogueItem
     public static async Task<Maybe<AvitoCatalogueItem>> FromCatalogueItemElement(IElementHandle catalogueItem, IPage page)
     {
         DisposableResourcesManager resourcesManager = new DisposableResourcesManager();
-        
+
         Maybe<string> itemId = await catalogueItem.GetAttribute("data-item-id");
         if (!itemId.HasValue) Maybe<AvitoCatalogueItem>.None();
 
@@ -33,7 +33,7 @@ public sealed class AvitoCatalogueItem
 
         Maybe<string> itemUrlAttribueValue = await itemUrlContainer.Value.GetAttribute("href");
         if (!itemUrlAttribueValue.HasValue) return Maybe<AvitoCatalogueItem>.None();
-        
+
         Maybe<IElementHandle> itemImage = await catalogueItem.GetElementRetriable("div[data-marker='item-image']");
         resourcesManager = resourcesManager.Add(itemImage);
         if (!itemImage.HasValue) Maybe<AvitoCatalogueItem>.None();
@@ -42,14 +42,14 @@ public sealed class AvitoCatalogueItem
         Maybe<IElementHandle> updatedItemImage = await page.GetElementRetriable($"div[data-marker='item'][data-item-id='{itemId.Value}']");
         resourcesManager = resourcesManager.Add(updatedItemImage);
         if (!updatedItemImage.HasValue) Maybe<AvitoCatalogueItem>.None();
-            
+
         Maybe<IElementHandle> photoSliderList = await updatedItemImage.Value.GetElementRetriable("ul.photo-slider-list-R0jle");
         resourcesManager = resourcesManager.Add(photoSliderList);
         if (!photoSliderList.HasValue) Maybe<AvitoCatalogueItem>.None();
 
         IElementHandle[] photoElements = await photoSliderList.Value.GetElements("li");
         resourcesManager = resourcesManager.Add(photoElements);
-        
+
         List<string> photos = [];
         foreach (IElementHandle photo in photoElements)
         {

@@ -20,11 +20,11 @@ public sealed class SelectedAvitoPage
             Maybe<IElementHandle> selectedPage = await paginationElement
                 .GetElementRetriable("span[aria-current='page']");
             if (!selectedPage.HasValue) continue;
-            
+
             Maybe<IElementHandle> pageNumberElement = await selectedPage
                 .Value.GetElementRetriable("span.styles-module-text-Z0vDE");
             if (!pageNumberElement.HasValue) continue;
-            
+
             Maybe<string> pageNumberText = await pageNumberElement.Value.GetElementInnerText();
             if (!pageNumberText.HasValue) continue;
             currentPage = int.Parse(pageNumberText.Value);

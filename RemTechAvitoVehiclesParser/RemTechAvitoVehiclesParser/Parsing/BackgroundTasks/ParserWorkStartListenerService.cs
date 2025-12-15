@@ -9,7 +9,7 @@ using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
 namespace RemTechAvitoVehiclesParser.Parsing.BackgroundTasks;
 
 public sealed class ParserWorkStartListenerService(Serilog.ILogger logger, IServiceProvider sp, RabbitMqConnectionSource rabbitMq
-    ) 
+    )
     : BackgroundService
 {
     private readonly Serilog.ILogger _logger = logger.ForContext<ParserWorkStartListenerService>();
@@ -18,7 +18,7 @@ public sealed class ParserWorkStartListenerService(Serilog.ILogger logger, IServ
     private const string Type = "topic";
     private static readonly string RoutingKey = $"start.{ConstantsForMainApplicationCommunication.CurrentServiceDomain}.{ConstantsForMainApplicationCommunication.CurrentServiceType}";
     private IChannel _channel = null!;
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         IConnection connection = await rabbitMq.GetConnection(stoppingToken);
@@ -37,7 +37,7 @@ public sealed class ParserWorkStartListenerService(Serilog.ILogger logger, IServ
             durable: true,
             autoDelete: false,
             cancellationToken: stoppingToken);
-        
+
         await _channel.QueueBindAsync(
             queue: Queue,
             exchange: Exchange,
@@ -65,7 +65,7 @@ public sealed class ParserWorkStartListenerService(Serilog.ILogger logger, IServ
             {
                 string json = Encoding.UTF8.GetString(@event.Body.ToArray());
                 using JsonDocument document = JsonDocument.Parse(json);
-                
+
                 Guid id = document.RootElement.GetProperty("parser_id").GetGuid();
                 string domain = document.RootElement.GetProperty("parser_domain").GetString()!;
                 string type = document.RootElement.GetProperty("parser_type").GetString()!;

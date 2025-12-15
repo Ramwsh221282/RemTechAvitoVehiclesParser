@@ -13,7 +13,7 @@ public static class SharedDependenciesInjection
             services.AddTransient<IDbUpgrader, RemTechAvitoParserDbUpgrader>();
         }
     }
-    
+
     extension(IServiceProvider sp)
     {
         public async Task RequireParserRegistration(string domain, string type)

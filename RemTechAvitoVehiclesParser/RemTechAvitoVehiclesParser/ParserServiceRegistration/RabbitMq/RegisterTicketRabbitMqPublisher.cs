@@ -13,7 +13,7 @@ public sealed class RegisterTicketRabbitMqPublisher(RabbitMqConnectionSource con
     private const string Exchange = ConstantsForMainApplicationCommunication.CreateParserRoutingKey;
     private const string Type = "topic";
     private const string RoutingKey = ConstantsForMainApplicationCommunication.CreateParserRoutingKey;
-    
+
     public async Task Publish(RegisterParserServiceTicket ticket, CancellationToken ct = default)
     {
         object normalizedPayload = CreateNormalizedPayload(ticket);
@@ -21,7 +21,7 @@ public sealed class RegisterTicketRabbitMqPublisher(RabbitMqConnectionSource con
         ReadOnlyMemory<byte> bytePayload = CreateByteArrayPayload(jsonPayload);
         await PublishMessage(connectionFactory, bytePayload, ct);
     }
-    
+
     private static object CreateNormalizedPayload(RegisterParserServiceTicket snapshot)
     {
         return new
@@ -36,7 +36,7 @@ public sealed class RegisterTicketRabbitMqPublisher(RabbitMqConnectionSource con
     {
         return JsonSerializer.Serialize(payload);
     }
-    
+
     private static ReadOnlyMemory<byte> CreateByteArrayPayload(string json)
     {
         return Encoding.UTF8.GetBytes(json);
@@ -47,7 +47,7 @@ public sealed class RegisterTicketRabbitMqPublisher(RabbitMqConnectionSource con
         CreateChannelOptions options = new(
             publisherConfirmationsEnabled: true,
             publisherConfirmationTrackingEnabled: true);
-        
+
         IConnection connection = await factory.GetConnection(ct);
         await using IChannel channel = await connection.CreateChannelAsync(cancellationToken: ct, options: options);
 
@@ -73,9 +73,9 @@ public sealed class RegisterTicketRabbitMqPublisher(RabbitMqConnectionSource con
             routingKey: RoutingKey,
             cancellationToken: ct
         );
-        
+
         BasicProperties properties = new() { Persistent = true };
-        
+
         await channel.BasicPublishAsync(
             exchange: Exchange,
             routingKey: RoutingKey,

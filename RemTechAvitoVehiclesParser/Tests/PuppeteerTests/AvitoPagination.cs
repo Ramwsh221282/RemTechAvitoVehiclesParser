@@ -37,7 +37,7 @@ public sealed class AvitoPagination
         sb.Append($"?p={CurrentPageValue}");
         return sb.ToString();
     }
-    
+
     public static async Task<AvitoPagination> FromCatalogue(IPage page, string url)
     {
         Maybe<IElementHandle> element = await page.GetElementRetriable("nav[aria-label='Пагинация']");

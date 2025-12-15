@@ -29,7 +29,7 @@ public sealed class NpgSqlCataloguePageItemsStorage(NpgSqlSession adapter)
         object[] parameters = items.Select(u => u.ExtractParameters()).ToArray();
         await adapter.ExecuteBulk(sql, parameters);
     }
-    
+
     public async Task UpdateMany(IEnumerable<CataloguePageItem> items)
     {
         const string sql = """

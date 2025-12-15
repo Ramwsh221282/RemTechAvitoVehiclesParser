@@ -48,12 +48,12 @@ public static class NpgSqlPaginationParsingParserConverting
             if (args.LinksWithCurrentPage) filters.Add("l.current_page is not null");
             if (args.OnlyNotProcessedLinks) filters.Add("l.was_processed is FALSE");
             if (args.OnlyProcessedLinks) filters.Add("l.was_processed is TRUE");
-            
+
             return filters.Count == 0 ? (parameters, string.Empty) : (parameters, "WHERE " + string.Join(" AND ", filters));
         }
-        
+
         public string LinksLimitClause() => args.LinksLimit.HasValue ? $"LIMIT {args.LinksLimit.Value}" : string.Empty;
-    
+
         public string LockClause() => args.WithLock ? "FOR UPDATE" : string.Empty;
     }
 }

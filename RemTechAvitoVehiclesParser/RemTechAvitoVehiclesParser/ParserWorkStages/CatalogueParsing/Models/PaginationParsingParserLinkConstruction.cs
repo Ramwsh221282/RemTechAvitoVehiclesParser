@@ -21,12 +21,12 @@ public static class PaginationParsingParserLinkConstruction
             CurrentPage: currentPageMap(source),
             MaxPage: maxPageMap(source)
         );
-        
+
         public static PaginationParsingParserLink NewFromParser(PaginationParsingParser parser, string url) => new
         (
-            Id: Guid.NewGuid(), 
-            ParserId: parser.Id, 
-            Url: url, 
+            Id: Guid.NewGuid(),
+            ParserId: parser.Id,
+            Url: url,
             WasProcessed: false,
             CurrentPage: null,
             MaxPage: null

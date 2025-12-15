@@ -1,7 +1,7 @@
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Database;
 
 public sealed record QueryRegisteredTicketArgs(
-    Guid? Id = null, 
+    Guid? Id = null,
     bool WithLock = false,
     bool FinishedOnly = false,
     bool SentOnly = false,

@@ -9,9 +9,10 @@ public static class WorkStageConstants
     public const string SleepingStage = "SLEEPING";
 }
 
-public record ParserWorkStage(Guid Id, string Name, DateTime Created, DateTime? Finished)
+public record ParserWorkStage(Guid Id, string Name)
 {
-    public ParserWorkStage(ParserWorkStage origin, string name) : this(origin.Id, name, origin.Created, origin.Finished) { }
+    public ParserWorkStage(ParserWorkStage origin, string name) : 
+    this(origin.Id, name) { }
 }
 public sealed record EvaluationWorkStage(ParserWorkStage Stage) : ParserWorkStage(Stage, WorkStageConstants.EvaluationStageName);
 public sealed record CatalogueWorkStage(ParserWorkStage Stage) : ParserWorkStage(Stage, WorkStageConstants.CatalogueStageName);
@@ -23,27 +24,9 @@ public static class ParserWorkStageImplementation
 {
     extension(ParserWorkStage stage)
     {
-        public ParserWorkStage Finish(DateTime finishDate)
-        {
-            if (stage.Finished.HasValue)
-                throw new InvalidOperationException(
-                    """
-                    Cannot finish work stage. Work stage is already finished.
-                    If you want finish work stage you have to created a new one.
-                    """
-                );
-            return stage with { Finished = finishDate };
-        }
-        
+    
         public ParserWorkStage ChangeStage<T>(T other) where T : ParserWorkStage
         {
-            if (stage.Finished.HasValue)
-                throw new InvalidOperationException(
-                    """
-                    Cannot change work stage. Work stage is already finished.
-                    Only not finished (under work) stages are allowed to be changed.
-                    """
-                );
             return stage with { Name = other.Name };
         }
     }
@@ -56,25 +39,7 @@ public static class ParserWorkStageConstruction
         public static ParserWorkStage New(string name) => new
         (
             Id: Guid.NewGuid(),
-            Name: name,
-            Created: DateTime.UtcNow,
-            Finished: null
-        );
-        
-        public static ParserWorkStage MapFrom<T>(
-            T source,
-            Func<T, Guid> idMap,
-            Func<T, string> nameMap,
-            Func<T, DateTime> createdMap,
-            Func<T, DateTime?> finishMap
-        ) 
-            where T : class =>
-            new
-            (
-                Id: idMap(source),
-                Name: nameMap(source),
-                Created: createdMap(source),
-                Finished: finishMap(source)
-            );
+            Name: name            
+        );    
     }
 }

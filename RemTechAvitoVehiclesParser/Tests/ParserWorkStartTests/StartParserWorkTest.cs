@@ -19,7 +19,7 @@ public sealed class StartParserWorkTest(ParserWorkStartFixture fixture) : IClass
         string domain = ConstantsForMainApplicationCommunication.CurrentServiceDomain;
         string type = ConstantsForMainApplicationCommunication.CurrentServiceType;
         IEnumerable<(Guid, string)> links = [(Guid.NewGuid(), "https://www.avito.ru/all/gruzoviki_i_spetstehnika/tehnika_dlya_lesozagotovki/ponsse-ASgBAgICAkRUsiyexw346j8?cd=1")];
-        
+
         await PublishMessageToStartParserWork(id, domain, type, links);
         await Task.Delay(TimeSpan.FromSeconds(10));
         bool hasWorkStage = await EnsureHasParserEvaluationStage();
@@ -47,7 +47,7 @@ public sealed class StartParserWorkTest(ParserWorkStartFixture fixture) : IClass
         Maybe<ParserWorkStage> stage = await workStages.GetWorkStage(query);
         return stage.HasValue;
     }
-    
+
     private async Task<bool> EnsurePaginationEvaluated(Guid id)
     {
         await using AsyncServiceScope scope = _sp.CreateAsyncScope();
@@ -56,7 +56,7 @@ public sealed class StartParserWorkTest(ParserWorkStartFixture fixture) : IClass
         Maybe<PaginationParsingParser> parser = await storage.GetParser(query);
         return parser.HasValue;
     }
-    
+
     private async Task<bool> EnsureHasPendingParserPaginationEvaluation(Guid id)
     {
         await using AsyncServiceScope scope = _sp.CreateAsyncScope();

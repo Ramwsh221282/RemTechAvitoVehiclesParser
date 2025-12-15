@@ -14,7 +14,7 @@ public static class CataloguePageUrlImplementation
                     """);
             return url with { Processed = true };
         }
-        
+
         public CataloguePageUrl IncrementRetryCount()
         {
             int nextRetryCount = url.RetryCount + 1;
@@ -23,7 +23,7 @@ public static class CataloguePageUrlImplementation
 
         public CataloguePageUrl AddItems(IEnumerable<CataloguePageItem> items)
         {
-            return url with { Items = [..items] };
+            return url with { Items = [.. items] };
         }
     }
 }

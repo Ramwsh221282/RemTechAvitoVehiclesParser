@@ -1,73 +1,70 @@
-﻿using AvitoFirewallBypass;
 using ParsingSDK.Parsing;
 using ParsingSDK.TextProcessing;
 using PuppeteerSharp;
-using Quartz;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
-using RemTech.SharedKernel.Infrastructure.Quartz;
+using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
+using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 using RemTechAvitoVehiclesParser.Parsing;
 
-namespace RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.BackgroundTasks;
+namespace RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Processes;
 
-[DisallowConcurrentExecution]
-[CronSchedule("*/5 * * * * ?")]
-public sealed class ConcretePagesProcessingBackgroundTask(
-    NpgSqlConnectionFactory npgSlqConnectionFactory,
-    Serilog.ILogger logger,
-    BrowserFactory browserFactory,
-    AvitoBypassFactory bypassFactory,
-    TextTransformerBuilder textTransformerBuilder
-    ) :
-    ICronScheduleJob
+public static class ConcreteItemParsingProcessImplementation
 {
-    private readonly Serilog.ILogger _logger = logger.ForContext<ConcretePagesProcessingBackgroundTask>();
-    
-    public async Task Execute(IJobExecutionContext context)
+    extension(WorkStageProcess)
     {
-        CancellationToken ct = context.CancellationToken;
-        await using NpgSqlSession session = new(npgSlqConnectionFactory);
-        NpgSqlParserWorkStagesStorage stagesStorage = new(session);
-        NpgSqlCataloguePageItemsStorage itemsStorage = new(session);
-        NpgSqlPendingToPublishItemsStorage npgSqlPendingItemsStorage = new(session);
-
-        await session.UseTransaction(ct);
-        WorkStageQuery stageQuery = new(Name: WorkStageConstants.ConcreteItemStageName, WithLock: true);
-        Maybe<ParserWorkStage> workStage = await stagesStorage.GetWorkStage(stageQuery, ct);
-        if (!workStage.HasValue) return;
-
-        CataloguePageItemQuery itemsQuery = new(NotProcessedOnly: true, Limit: 50, RetryLimitTreshold: 5);
-        CataloguePageItem[] items = [..await itemsStorage.GetItems(itemsQuery, ct)];
-        if (items.Length == 0)
+        public static WorkStageProcess ConcreteItems => async (deps, ct) =>
         {
-            await SwitchStageToFinalization(workStage.Value, stagesStorage, ct);
-            if (!await session.Commited(ct)) _logger.Error("Error at committing transaction.");
-            return;
-        }
-        
-        (IEnumerable<CataloguePageItem> catalogueItems, IEnumerable<PendingToPublishItem> results) = await ProcessItems(items);
-        
-        await itemsStorage.UpdateMany(catalogueItems);
-        await npgSqlPendingItemsStorage.SaveMany(results);
-        
-        if (!await session.Commited(ct)) _logger.Error("Error at committing transaction.");
+            Serilog.ILogger logger = deps.Logger.ForContext<WorkStageProcess>();
+            await using NpgSqlSession session = new(deps.NpgSql);
+            
+            NpgSqlCataloguePageItemsStorage itemsStorage = new(session);
+            NpgSqlPendingToPublishItemsStorage npgSqlPendingItemsStorage = new(session);
+
+            await session.UseTransaction(ct);
+            WorkStageQuery stageQuery = new(Name: WorkStageConstants.ConcreteItemStageName, WithLock: true);
+            Maybe<ParserWorkStage> workStage = await ParserWorkStage.GetSingle(session, stageQuery, ct);
+            if (!workStage.HasValue) return;
+
+            CataloguePageItemQuery itemsQuery = new(NotProcessedOnly: true, Limit: 50, RetryLimitTreshold: 5);
+            CataloguePageItem[] items = [.. await itemsStorage.GetItems(itemsQuery, ct)];
+            if (items.Length == 0)
+            {
+                ParserWorkStage finalStage = workStage.Value.ChangeStage(new FinalizationWorkStage(workStage.Value));                
+                await finalStage.Update(session, ct);
+                await session.UnsafeCommit(ct);                
+                logger.Information("Switched to: {Stage}", finalStage.Name);
+                return;
+            }
+
+            (IEnumerable<CataloguePageItem> catalogueItems, IEnumerable<PendingToPublishItem> results) = await ProcessItems(items, deps);
+
+            await itemsStorage.UpdateMany(catalogueItems);
+            await npgSqlPendingItemsStorage.SaveMany(results);
+
+            if (!await session.Commited(ct)) logger.Error("Error at committing transaction.");
+        };
     }
 
-    private async Task<(IEnumerable<CataloguePageItem>, IEnumerable<PendingToPublishItem>)> ProcessItems(CataloguePageItem[] items)
+    private static async Task<(IEnumerable<CataloguePageItem>, IEnumerable<PendingToPublishItem>)> ProcessItems(
+        CataloguePageItem[] items,
+        WorkStageProcessDependencies deps)
     {
-        ITextTransformer transformer = textTransformerBuilder
+        Serilog.ILogger logger = deps.Logger.ForContext<WorkStageProcess>();
+        ITextTransformer transformer = deps.TextTransformerBuilder
             .UsePunctuationCleaner()
             .UseEmojiCleaner()
             .UseNewLinesCleaner()
             .UseSpacesCleaner()
             .Build();
-        
-        IBrowser browser = await browserFactory.ProvideBrowser(headless: false);
+
+
+        IBrowser browser = await deps.Browsers.ProvideBrowser(headless: false);
         List<CataloguePageItem> processed = [];
         List<PendingToPublishItem> pendingItems = [];
         foreach (CataloguePageItem item in items)
@@ -77,8 +74,8 @@ public sealed class ConcretePagesProcessingBackgroundTask(
 
             try
             {
-                _logger.Information("Processing concrete item: {Url}", url);
-                var advertisement = await AvitoSpecialEquipmentAdvertisement.Create(await browser.GetPage(), url, bypassFactory);
+                logger.Information("Processing concrete item: {Url}", url);
+                var advertisement = await AvitoSpecialEquipmentAdvertisement.Create(await browser.GetPage(), url, deps.Bypasses);
                 (CataloguePageItem result, bool success) = await ResolveByPropertiesExistance(transformer, item, advertisement);
                 if (success)
                 {
@@ -86,38 +83,33 @@ public sealed class ConcretePagesProcessingBackgroundTask(
                     PendingToPublishItem pendingItem = CreatePending(item.Id, url, photos, advertisementSnapshot);
                     pendingItems.Add(pendingItem);
                 }
-                
+
+
                 processed.Add(result);
             }
-            catch(ArgumentNullException)
+            catch (ArgumentNullException)
             {
-                _logger.Error("Null reference exception in browser. Recreating browser");
+                logger.Error("Null reference exception in browser. Recreating browser");
                 await browser.DestroyAsync();
-                browser = await browserFactory.ProvideBrowser(headless: false);
+                browser = await deps.Browsers.ProvideBrowser(headless: false);
             }
-            catch(NullReferenceException)
+            catch (NullReferenceException)
             {
-                _logger.Error("Null reference exception in browser. Recreating browser");
+                logger.Error("Null reference exception in browser. Recreating browser");
                 await browser.DestroyAsync();
-                browser = await browserFactory.ProvideBrowser(headless: false);
+                browser = await deps.Browsers.ProvideBrowser(headless: false);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Failed to process advertisement. URL: {Url}", url);
+                logger.Error(ex, "Failed to process advertisement. URL: {Url}", url);
                 CataloguePageItem result = item.IncreaseRetry();
                 processed.Add(result);
             }
         }
-        
+
         await browser.DestroyAsync();
         return (processed, pendingItems);
-    }
-
-    private async Task SwitchStageToFinalization(ParserWorkStage stage, NpgSqlParserWorkStagesStorage storage, CancellationToken ct)
-    {
-        ParserWorkStage finalStage = stage.ChangeStage(new FinalizationWorkStage(stage));
-        await storage.Update(finalStage, ct);
-    }
+    }    
 
     private static async Task<(CataloguePageItem, bool)> ResolveByPropertiesExistance(
         ITextTransformer transformer,
@@ -136,9 +128,10 @@ public sealed class ConcretePagesProcessingBackgroundTask(
         if (!hasAddress) return (item.IncreaseRetry(), false);
         return (item.MarkProcessed(), true);
     }
-    
+
+
     private static PendingToPublishItem CreatePending(
-        string id, 
+        string id,
         string url,
         IEnumerable<string> photos,
         AvitoSpecialEquipmentAdvertisementSnapshot advertisement
@@ -153,7 +146,7 @@ public sealed class ConcretePagesProcessingBackgroundTask(
             IsNds: advertisement.IsNds,
             DescriptionList: advertisement.DescriptionList,
             Characteristics: advertisement.Characteristics,
-            Photos: [..photos],
+            Photos: [.. photos],
             WasProcessed: false
         );
     }

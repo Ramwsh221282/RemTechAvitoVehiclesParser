@@ -10,7 +10,7 @@ public static class NpgSqlPendingItemConverting
     {
         public IEnumerable<PendingToPublishItem> ToModels() => rows.Select(r => r.ToModel());
     }
-    
+
     extension(NpgSqlPendingItemRow row)
     {
         public PendingToPublishItem ToModel()
@@ -54,7 +54,7 @@ public static class NpgSqlPendingItemConverting
     {
         public string LockClause() => query.WithLock ? "FOR UPDATE" : string.Empty;
         public string LimitClause() => query.Limit.HasValue ? $"LIMIT {query.Limit.Value}" : string.Empty;
-    
+
         public (DynamicParameters, string filterSql) WhereClause()
         {
             List<string> filters = [];

@@ -29,8 +29,8 @@ public static class NpgSqlTicketsStorageConverting
 
     extension(NpgSqlRegisteredTicketRow? row)
     {
-        public Maybe<RegisterParserServiceTicket> MaybeTicket() => row == null 
-            ? Maybe<RegisterParserServiceTicket>.None() 
+        public Maybe<RegisterParserServiceTicket> MaybeTicket() => row == null
+            ? Maybe<RegisterParserServiceTicket>.None()
             : Maybe<RegisterParserServiceTicket>.Some(row.ToModel());
     }
 
@@ -46,14 +46,14 @@ public static class NpgSqlTicketsStorageConverting
             finished = ticket.Finished
         };
     }
-    
+
     extension(QueryRegisteredTicketArgs args)
     {
         public (DynamicParameters parameters, string filterSql) WhereClause()
         {
             List<string> filters = [];
             DynamicParameters parameters = new();
-        
+
             if (args.Id.HasValue)
             {
                 filters.Add("id=@id");
@@ -64,13 +64,13 @@ public static class NpgSqlTicketsStorageConverting
             if (args.NotFinishedOnly) filters.Add("finished is null");
             if (args.NotSentOnly) filters.Add("was_sent is false");
             if (args.SentOnly) filters.Add("was_sent IS TRUE");
-        
+
             string filtersResult = filters.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", filters);
             return (parameters, filtersResult);
         }
 
         public string LimitClause() => args.Limit.HasValue ? $"LIMIT {args.Limit}" : string.Empty;
-    
+
         public string LockClause() => args.WithLock ? "FOR UPDATE" : string.Empty;
     }
 }

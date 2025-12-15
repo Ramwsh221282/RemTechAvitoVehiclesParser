@@ -35,9 +35,9 @@ public static class NpgSqlCataloguePageUrlConverting
     extension(CataloguePageItemQuery query)
     {
         public string LimitClause() => query.Limit.HasValue ? $"LIMIT {query.Limit.Value}" : string.Empty;
-    
+
         public string LockClause() => query.WithLock ? "FOR UPDATE" : string.Empty;
-    
+
         public (DynamicParameters parameters, string filterSql) WhereClause()
         {
             List<string> filters = [];
@@ -54,10 +54,10 @@ public static class NpgSqlCataloguePageUrlConverting
                 filters.Add("retry_count < @retry_count");
                 parameters.Add("@retry_count", query.RetryLimitTreshold.Value, DbType.Int32);
             }
-            
+
             if (query.ProcessedOnly) filters.Add("was_processed is true");
             if (query.NotProcessedOnly) filters.Add("was_processed is false");
-            
+
             return filters.Count == 0 ? (parameters, string.Empty) : (parameters, "WHERE " + string.Join(" AND ", filters));
         }
     }
@@ -79,7 +79,7 @@ public static class NpgSqlCataloguePageUrlConverting
             retryMap: r => r.RetryCount
         );
     }
-    
+
     extension(CataloguePageItem item)
     {
         public object ExtractParameters() => new
@@ -91,13 +91,13 @@ public static class NpgSqlCataloguePageUrlConverting
             payload = item.Payload,
         };
     }
-    
+
     extension(CataloguePageUrlQuery query)
     {
         public string LimitClause() => query.Limit.HasValue ? $"LIMIT {query.Limit.Value}" : string.Empty;
-    
+
         public string LockClause() => query.WithLock ? "FOR UPDATE" : string.Empty;
-    
+
         public (DynamicParameters parameters, string filter) WhereClause()
         {
             List<string> filterSql = [];
@@ -120,14 +120,14 @@ public static class NpgSqlCataloguePageUrlConverting
                 filterSql.Add("retry_count < @treshold");
                 parameters.Add("@treshold", query.RetryLimitTreshold.Value, DbType.Int32);
             }
-            
+
             if (query.ProcessedOnly.HasValue) filterSql.Add("was_processed is true");
             if (query.UnprocessedOnly.HasValue) filterSql.Add("was_processed is false");
 
             return filterSql.Count == 0 ? (parameters, string.Empty) : (parameters, "WHERE " + string.Join(" AND ", filterSql));
         }
     }
-    
+
     extension(CataloguePageUrl url)
     {
         public object ExtractParameters() => new

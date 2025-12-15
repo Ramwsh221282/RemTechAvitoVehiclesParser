@@ -11,7 +11,7 @@ public sealed class BrowserTests(PuppeteerTestFixture fixture) : IClassFixture<P
 {
     private readonly BrowserFactory _browserFactory = fixture.Services.GetRequiredService<BrowserFactory>();
     private readonly AvitoBypassFactory _bypassFactory = fixture.Services.GetRequiredService<AvitoBypassFactory>();
-    
+
     [Fact]
     private async Task Scrape_Single_Catalogue_Item()
     {
@@ -26,16 +26,16 @@ public sealed class BrowserTests(PuppeteerTestFixture fixture) : IClassFixture<P
             .UseNewLinesCleaner()
             .UseSpacesCleaner()
             .Build();
-        
+
         Assert.True(await advertisement.HasTitle());
         Assert.True(await advertisement.HasPrice());
         Assert.True(await advertisement.HasCharacteristics());
         Assert.True(await advertisement.HasDescription(transformer));
         Assert.True(await advertisement.HasAddress(transformer));
-        
+
         await browser.DestroyAsync();
     }
-    
+
     [Fact]
     private async Task Hover_Avito_Advertisement_Photos()
     {
@@ -81,7 +81,7 @@ public sealed class BrowserTests(PuppeteerTestFixture fixture) : IClassFixture<P
         await page.NavigatePage(targetUrl);
         bool solved = await new AvitoByPassFirewallWithRetry(new AvitoBypassFirewallLazy(page, new AvitoBypassFirewall(page))).Bypass();
         if (!solved) return;
-        
+
         await page.ScrollBottom();
         await page.ScrollTop();
         AvitoPagination pagination = await AvitoPagination.FromCatalogue(page, targetUrl);

@@ -2,6 +2,6 @@
 
 public sealed record PaginationParsingParser(
     Guid Id,
-    string Domain, 
-    string Type, 
+    string Domain,
+    string Type,
     IReadOnlyList<PaginationParsingParserLink> Links);

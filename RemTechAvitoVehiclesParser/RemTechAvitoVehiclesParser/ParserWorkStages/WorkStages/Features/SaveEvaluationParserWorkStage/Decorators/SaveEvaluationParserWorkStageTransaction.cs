@@ -10,7 +10,7 @@ public sealed class SaveEvaluationParserWorkStageTransaction(
 ) : ISaveEvaluationParserWorkStage
 {
     public async Task<(ParserWorkStage stage, PaginationParsingParser parser)> Handle(
-        SaveEvaluationParserWorkStageCommand command, 
+        SaveEvaluationParserWorkStageCommand command,
         CancellationToken ct = default)
     {
         await session.UseTransaction();

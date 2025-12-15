@@ -11,14 +11,14 @@ namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.BackgroundTasks;
 [DisallowConcurrentExecution]
 [CronSchedule("*/5 * * * * ?")]
 public sealed class PublishPendingRegistrationTicketsToQueue(
-    Serilog.ILogger logger, 
-    NpgSqlConnectionFactory npgSql, 
+    Serilog.ILogger logger,
+    NpgSqlConnectionFactory npgSql,
     RabbitMqConnectionSource rabbitMq
     ) :
     ICronScheduleJob
 {
     private readonly Serilog.ILogger _logger = logger.ForContext<PublishPendingRegistrationTicketsToQueue>();
-    
+
     public async Task Execute(IJobExecutionContext context)
     {
         CancellationToken ct = context.CancellationToken;
@@ -28,7 +28,7 @@ public sealed class PublishPendingRegistrationTicketsToQueue(
         await session.UseTransaction(ct: ct);
 
         QueryRegisteredTicketArgs args = new(NotSentOnly: true, Limit: 50, WithLock: true, NotFinishedOnly: true);
-        RegisterParserServiceTicket[] pendingTickets = [..await storage.GetTickets(args, ct)];
+        RegisterParserServiceTicket[] pendingTickets = [.. await storage.GetTickets(args, ct)];
         if (pendingTickets.Length == 0) return;
 
         List<RegisterParserServiceTicket> succeeded = [];
@@ -41,19 +41,19 @@ public sealed class PublishPendingRegistrationTicketsToQueue(
                 succeeded.Add(sent);
                 LogSuccessPublishing(sent);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 LogFailurePublishing(ex);
             }
         }
 
         await storage.UpdateMany(succeeded);
-        
+
         try
         {
             await session.UnsafeCommit(ct);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _logger.Error(ex, "Error at commiting updating tickets in database.");
         }

@@ -19,7 +19,7 @@ public sealed class TestParserRegistrationTicketApprovalService(
     private const string RoutingKey = ConstantsForMainApplicationCommunication.CreateParserRoutingKey;
 
     private IChannel _channel = null!;
-        
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         IConnection connection = await rabbitMqConnectionFactory.GetConnection(stoppingToken);
@@ -40,7 +40,7 @@ public sealed class TestParserRegistrationTicketApprovalService(
             autoDelete: false,
             cancellationToken: stoppingToken
         );
-        
+
         await _channel.QueueBindAsync(
             queue: Queue,
             exchange: Exchange,
@@ -49,12 +49,12 @@ public sealed class TestParserRegistrationTicketApprovalService(
         );
 
         AsyncEventingBasicConsumer consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.ReceivedAsync += Handler; 
-        
+        consumer.ReceivedAsync += Handler;
+
         await _channel.BasicConsumeAsync(
-            queue: Queue, 
-            autoAck: true, 
-            consumer: consumer, 
+            queue: Queue,
+            autoAck: true,
+            consumer: consumer,
             cancellationToken: stoppingToken
             );
     }
@@ -63,13 +63,13 @@ public sealed class TestParserRegistrationTicketApprovalService(
     {
         logger.Information("Message recieved.");
         string json = Encoding.UTF8.GetString(@event.Body.Span);
-        
+
         logger.Information("""
                            Message information:
                            {Json}
                            """, json);
-        
+
         Messages.Add(json);
-        await _channel.BasicAckAsync(@event.DeliveryTag, false); 
+        await _channel.BasicAckAsync(@event.DeliveryTag, false);
     };
 }

@@ -1,7 +1,7 @@
 ﻿namespace RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Database;
 
 public sealed record PaginationEvaluationParsersQuery(
-    Guid? ParserId = null, 
+    Guid? ParserId = null,
     bool WithLock = false,
     bool LinksWithoutCurrentPage = false,
     bool LinksWithoutMaxPage = false,

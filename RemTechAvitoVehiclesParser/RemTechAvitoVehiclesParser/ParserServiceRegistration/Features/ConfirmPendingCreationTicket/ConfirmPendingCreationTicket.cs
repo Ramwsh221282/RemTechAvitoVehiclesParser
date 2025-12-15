@@ -6,7 +6,7 @@ namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.ConfirmP
 
 public sealed class ConfirmPendingCreationTicket(
     NpgSqlRegisteredTicketsStorage storage
-) : 
+) :
     IConfirmPendingCreationTicket
 {
     public async Task<RegisterParserServiceTicket> Handle(ConfirmPendingCreationTicketCommand command, CancellationToken ct = default)

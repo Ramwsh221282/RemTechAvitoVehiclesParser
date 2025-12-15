@@ -11,9 +11,9 @@ public sealed class PublisherToParserRegistrationTicketApproval(RabbitMqConnecti
     private const string Queue = ConstantsForMainApplicationCommunication.CurrentServiceDomain;
     private const string Exchange = ConstantsForMainApplicationCommunication.CurrentServiceType;
     private const string Type = "topic";
-    private static readonly string RoutingKey = 
+    private static readonly string RoutingKey =
             $"{ConstantsForMainApplicationCommunication.CurrentServiceDomain}{ConstantsForMainApplicationCommunication.CurrentServiceType}";
-    
+
     public async Task Publish(Guid ticketId, string domain, string type)
     {
         IConnection connection = await connectionFactory.GetConnection(CancellationToken.None);
@@ -42,7 +42,7 @@ public sealed class PublisherToParserRegistrationTicketApproval(RabbitMqConnecti
             parser_domain = domain,
             parser_type = type,
         };
-        
+
         string jsonPayload = JsonSerializer.Serialize(payload);
         ReadOnlyMemory<byte> bytesPayload = Encoding.UTF8.GetBytes(jsonPayload);
 

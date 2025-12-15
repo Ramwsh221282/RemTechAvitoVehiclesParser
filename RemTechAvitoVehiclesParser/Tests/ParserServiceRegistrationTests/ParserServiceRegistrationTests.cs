@@ -51,7 +51,7 @@ public sealed class ParserServiceRegistrationTests(ParserServiceRegistrationFixt
         IEnumerable<RegisterParserServiceTicket> tickets = await storage.GetTickets(args);
         return tickets.Any() == false;
     }
-    
+
     private async Task<bool> HasSentTickets()
     {
         await using AsyncServiceScope scope = _sp.CreateAsyncScope();
@@ -73,7 +73,7 @@ public sealed class ParserServiceRegistrationTests(ParserServiceRegistrationFixt
     private async Task PublishForConfirmation(Guid id, string domain, string type)
     {
         await using AsyncServiceScope scope = _sp.CreateAsyncScope();
-        PublisherToParserRegistrationTicketApproval publisher = 
+        PublisherToParserRegistrationTicketApproval publisher =
             scope.ServiceProvider.GetRequiredService<PublisherToParserRegistrationTicketApproval>();
         await publisher.Publish(id, domain, type);
     }

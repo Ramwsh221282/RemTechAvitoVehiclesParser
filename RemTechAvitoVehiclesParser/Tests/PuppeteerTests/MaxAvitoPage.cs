@@ -25,7 +25,7 @@ public sealed class MaxAvitoPage
             if (maxPage < maxPageValue)
                 maxPage = maxPageValue;
         }
-        
+
         return new MaxAvitoPage(maxPage);
     }
 }

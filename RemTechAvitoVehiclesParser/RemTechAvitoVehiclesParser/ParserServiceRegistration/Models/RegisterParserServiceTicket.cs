@@ -31,9 +31,9 @@ public static class RegisterParserServiceTicketImplementation
                 Ticket was already finished.
                 If you want to finish the ticket you have to create a new one.                                                         
                 """);
-            return ticket with { Finished =  finishDate };
+            return ticket with { Finished = finishDate };
         }
-        
+
         public bool IsOfType(string type)
         {
             return ticket.Type == type;
@@ -53,7 +53,7 @@ public static class RegisterParserServiceTicketConstruction
             Func<T, DateTime> createdMap,
             Func<T, DateTime?> finishedMap,
             Func<T, bool> wasSentMap
-            ) 
+            )
             where T : class
         {
             return new(
@@ -65,7 +65,7 @@ public static class RegisterParserServiceTicketConstruction
                 WasSent: wasSentMap(source)
                 );
         }
-        
+
         public static RegisterParserServiceTicket From<T>(
             T source,
             Func<T, Guid> idMap,
@@ -74,7 +74,7 @@ public static class RegisterParserServiceTicketConstruction
             Func<T, DateTime> createdMap,
             Func<T, DateTime?> finishedMap,
             Func<T, bool> wasSentMap
-        ) 
+        )
             where T : class
         {
             return new(
@@ -86,10 +86,10 @@ public static class RegisterParserServiceTicketConstruction
                 WasSent: wasSentMap(source)
             );
         }
-        
+
         public static RegisterParserServiceTicket New(
-            string ticketType, 
-            string parserDomain, 
+            string ticketType,
+            string parserDomain,
             string parserType)
         {
             object payloadData = new { parser_domain = parserDomain, parser_type = parserType };
@@ -102,13 +102,13 @@ public static class RegisterParserServiceTicketConstruction
             string payload)
         {
             return new(
-                Id: Guid.NewGuid(), 
-                Type: ticketType, 
+                Id: Guid.NewGuid(),
+                Type: ticketType,
                 Payload: payload,
                 Created: DateTime.UtcNow,
                 Finished: null,
                 WasSent: false
             );
-        }   
+        }
     }
 }

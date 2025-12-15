@@ -4,12 +4,12 @@ using RemTechAvitoVehiclesParser.ParserServiceRegistration.Models;
 namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.RegisterParserCreationTicket.Decorators;
 
 public sealed class RegisterParserCreationTicketTransaction(
-    NpgSqlSession session, 
-    IRegisterParserCreationTicket origin) : 
+    NpgSqlSession session,
+    IRegisterParserCreationTicket origin) :
     IRegisterParserCreationTicket
 {
     public async Task<RegisterParserServiceTicket> Handle(
-        RegisterParserCreationTicketCommand command, 
+        RegisterParserCreationTicketCommand command,
         CancellationToken ct = default)
     {
         await session.UseTransaction(ct);

@@ -4,12 +4,12 @@ using PuppeteerSharp;
 namespace Tests.PuppeteerTests;
 
 public sealed class AvitoCatalogueItemsCollection
-{ 
+{
     public IReadOnlyList<AvitoCatalogueItem> Items { get; }
 
     private AvitoCatalogueItemsCollection(IEnumerable<AvitoCatalogueItem> items)
     {
-        Items = [..items];
+        Items = [.. items];
     }
 
     public static async Task<AvitoCatalogueItemsCollection> FromCatalogue(IPage page)
