@@ -6,14 +6,8 @@ public static class CataloguePageItemConstruction
 {
     extension(CataloguePageItem)
     {
-        public static CataloguePageItem New(string itemId, Guid catalogueUrlId, string url, IReadOnlyList<string> photos) => new
-        (
-            Id: itemId,
-            CatalogueUrlId: catalogueUrlId,
-            Payload: JsonSerializer.Serialize(new { url, photos }),
-            WasProcessed: false,
-            RetryCount: 0
-        );
+        public static CataloguePageItem New(string url) =>
+            new(url, WasProcessed: false, RetryCount: 0);
 
         public static CataloguePageItem MapFrom<T>(
             T source,
@@ -22,14 +16,14 @@ public static class CataloguePageItemConstruction
             Func<T, string> payloadMap,
             Func<T, bool> processedMap,
             Func<T, int> retryMap
-        ) => new
-        (
-            Id: idMap(source),
-            CatalogueUrlId: catalogueIdMap(source),
-            Payload: payloadMap(source),
-            WasProcessed: processedMap(source),
-            RetryCount: retryMap(source)
-        );
+        ) =>
+            new(
+                Id: idMap(source),
+                CatalogueUrlId: catalogueIdMap(source),
+                Payload: payloadMap(source),
+                WasProcessed: processedMap(source),
+                RetryCount: retryMap(source)
+            );
 
         public static CataloguePageItem MapFrom<T>(
             T source,
@@ -38,6 +32,14 @@ public static class CataloguePageItemConstruction
             Func<T, object> payloadMap,
             Func<T, bool> processedMap,
             Func<T, int> retryMap
-        ) => MapFrom(source, idMap, catalogueIdMap, s => JsonSerializer.Serialize(payloadMap(s)), processedMap, retryMap);
+        ) =>
+            MapFrom(
+                source,
+                idMap,
+                catalogueIdMap,
+                s => JsonSerializer.Serialize(payloadMap(s)),
+                processedMap,
+                retryMap
+            );
     }
 }

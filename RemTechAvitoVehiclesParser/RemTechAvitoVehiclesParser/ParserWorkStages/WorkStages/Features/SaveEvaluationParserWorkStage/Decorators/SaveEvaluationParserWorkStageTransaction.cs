@@ -9,12 +9,13 @@ public sealed class SaveEvaluationParserWorkStageTransaction(
     ISaveEvaluationParserWorkStage origin
 ) : ISaveEvaluationParserWorkStage
 {
-    public async Task<(ParserWorkStage stage, PaginationParsingParser parser)> Handle(
+    public async Task<(ParserWorkStage stage, ProcessingParser parser)> Handle(
         SaveEvaluationParserWorkStageCommand command,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
         await session.UseTransaction();
-        (ParserWorkStage stage, PaginationParsingParser parser) result = await origin.Handle(command, ct);
+        (ParserWorkStage stage, ProcessingParser parser) result = await origin.Handle(command, ct);
         await session.UnsafeCommit(ct);
         return result;
     }

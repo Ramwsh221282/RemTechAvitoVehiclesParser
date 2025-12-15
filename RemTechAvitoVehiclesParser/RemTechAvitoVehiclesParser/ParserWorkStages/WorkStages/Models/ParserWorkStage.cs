@@ -9,37 +9,27 @@ public static class WorkStageConstants
     public const string SleepingStage = "SLEEPING";
 }
 
-public record ParserWorkStage(Guid Id, string Name)
+public class ParserWorkStage
 {
-    public ParserWorkStage(ParserWorkStage origin, string name) : 
-    this(origin.Id, name) { }
-}
-public sealed record EvaluationWorkStage(ParserWorkStage Stage) : ParserWorkStage(Stage, WorkStageConstants.EvaluationStageName);
-public sealed record CatalogueWorkStage(ParserWorkStage Stage) : ParserWorkStage(Stage, WorkStageConstants.CatalogueStageName);
-public sealed record ConcreteItemWorkStage(ParserWorkStage Stage) : ParserWorkStage(Stage, WorkStageConstants.ConcreteItemStageName);
-public sealed record FinalizationWorkStage(ParserWorkStage Stage) : ParserWorkStage(Stage, WorkStageConstants.FinalizationStage);
-public sealed record SleepingWorkStage(ParserWorkStage Stage) : ParserWorkStage(Stage, WorkStageConstants.SleepingStage);
+    public Guid Id { get; private init; }
+    public string Name { get; private set; }
 
-public static class ParserWorkStageImplementation
-{
-    extension(ParserWorkStage stage)
-    {
-    
-        public ParserWorkStage ChangeStage<T>(T other) where T : ParserWorkStage
-        {
-            return stage with { Name = other.Name };
-        }
-    }
-}
+    public static ParserWorkStage PaginationStage() =>
+        new() { Id = Guid.NewGuid(), Name = WorkStageConstants.EvaluationStageName };
 
-public static class ParserWorkStageConstruction
-{
-    extension(ParserWorkStage)
+    public static ParserWorkStage Create(Guid id, string name) => new() { Id = id, Name = name };
+
+    public void ToCatalogueStage() => Name = WorkStageConstants.CatalogueStageName;
+
+    public void ToConcreteStage() => Name = WorkStageConstants.ConcreteItemStageName;
+
+    public void ToFinalizationStage() => Name = WorkStageConstants.FinalizationStage;
+
+    public void ToSleepingStage() => Name = WorkStageConstants.SleepingStage;
+
+    private ParserWorkStage()
     {
-        public static ParserWorkStage New(string name) => new
-        (
-            Id: Guid.NewGuid(),
-            Name: name            
-        );    
+        Id = Guid.NewGuid();
+        Name = string.Empty;
     }
 }

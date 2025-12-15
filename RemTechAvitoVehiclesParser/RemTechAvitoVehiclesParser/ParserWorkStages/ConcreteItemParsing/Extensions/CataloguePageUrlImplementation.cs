@@ -1,4 +1,6 @@
-﻿namespace RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Models;
+﻿using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Models;
+
+namespace RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
 
 public static class CataloguePageUrlImplementation
 {
@@ -11,7 +13,8 @@ public static class CataloguePageUrlImplementation
                     """
                     Cannot mark catalogue page url as processed.
                     Catalogue page url is already processed.
-                    """);
+                    """
+                );
             return url with { Processed = true };
         }
 

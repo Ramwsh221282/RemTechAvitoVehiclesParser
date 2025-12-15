@@ -11,16 +11,20 @@ public sealed class SaveEvaluationParserWorkStage(
     NpgSqlPaginationParsingParsersStorage parsersStorage
 ) : ISaveEvaluationParserWorkStage
 {
-    public async Task<(ParserWorkStage stage, PaginationParsingParser parser)> Handle(
+    public async Task<(ParserWorkStage stage, ProcessingParser parser)> Handle(
         SaveEvaluationParserWorkStageCommand command,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+    )
     {
-        ParserWorkStage stage = new EvaluationWorkStage(new ParserWorkStage(command.Id, Name: WorkStageConstants.EvaluationStageName));
-        PaginationParsingParser parser = new(command.Id, command.Domain, command.Type, []);
-        IEnumerable<PaginationParsingParserLink> links = command.Links.Select(l =>
-            PaginationParsingParserLink.FromParser(parser, l.Id, l.Url));
+        ParserWorkStage stage = new EvaluationWorkStage(
+            new ParserWorkStage(command.Id, Name: WorkStageConstants.EvaluationStageName)
+        );
+        ProcessingParser parser = new(command.Id, command.Domain, command.Type, []);
+        IEnumerable<ProcessingParserLink> links = command.Links.Select(l =>
+            ProcessingParserLink.FromParser(parser, l.Id, l.Url)
+        );
 
-        PaginationParsingParser withLinks = parser.AddLinks(links);
+        ProcessingParser withLinks = parser.AddLinks(links);
         await stage.Persist(session, ct);
         await parsersStorage.Save(withLinks, ct, withLinks: true);
         return (stage, withLinks);

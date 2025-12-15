@@ -9,8 +9,10 @@ namespace Tests.PuppeteerTests;
 
 public sealed class BrowserTests(PuppeteerTestFixture fixture) : IClassFixture<PuppeteerTestFixture>
 {
-    private readonly BrowserFactory _browserFactory = fixture.Services.GetRequiredService<BrowserFactory>();
-    private readonly AvitoBypassFactory _bypassFactory = fixture.Services.GetRequiredService<AvitoBypassFactory>();
+    private readonly BrowserFactory _browserFactory =
+        fixture.Services.GetRequiredService<BrowserFactory>();
+    private readonly AvitoBypassFactory _bypassFactory =
+        fixture.Services.GetRequiredService<AvitoBypassFactory>();
 
     [Fact]
     private async Task Scrape_Single_Catalogue_Item()
@@ -19,7 +21,8 @@ public sealed class BrowserTests(PuppeteerTestFixture fixture) : IClassFixture<P
             "https://www.avito.ru/vaskelovo/gruzoviki_i_spetstehnika/harvester_john_deere_1270d_4190912922?context=H4sIAAAAAAAA_wE_AMD_YToyOntzOjEzOiJsb2NhbFByaW9yaXR5IjtiOjA7czoxOiJ4IjtzOjE2OiI3c05LZmJnZFJONU1rYjB5Ijt9GqaZOT8AAAA";
         IBrowser browser = await _browserFactory.ProvideBrowser(headless: false);
         IPage page = await browser.GetPage();
-        AvitoSpecialEquipmentAdvertisement advertisement = await AvitoSpecialEquipmentAdvertisement.Create(page, url, _bypassFactory);
+        AvitoSpecialEquipmentAdvertisement advertisement =
+            await AvitoSpecialEquipmentAdvertisement.Create(page, url, _bypassFactory);
 
         ITextTransformer transformer = new TextTransformerBuilder()
             .UsePunctuationCleaner()
@@ -46,22 +49,32 @@ public sealed class BrowserTests(PuppeteerTestFixture fixture) : IClassFixture<P
         IBrowser browser = await factory.ProvideBrowser(headless: false);
         IPage page = await browser.GetPage();
         await page.NavigatePage(targetUrl);
-        bool solved = await new AvitoByPassFirewallWithRetry(new AvitoBypassFirewallLazy(page, new AvitoBypassFirewall(page))).Bypass();
-        if (!solved) return;
+        bool solved = await new AvitoByPassFirewallWithRetry(
+            new AvitoBypassFirewallLazy(page, new AvitoBypassFirewall(page))
+        ).Bypass();
+        if (!solved)
+            return;
         await page.ScrollBottom();
         await page.ScrollTop();
         AvitoPagination pagination = await AvitoPagination.FromCatalogue(page, targetUrl);
         await pagination.ProcessWhileNotReachedMaxPage(async () =>
         {
-            AvitoCatalogueItemsCollection items = await AvitoCatalogueItemsCollection.FromCatalogue(page);
+            AvitoCatalogueItemsCollection items = await AvitoCatalogueItemsCollection.FromCatalogue(
+                page
+            );
             foreach (var catalogueItem in items.Items)
             {
                 string url = catalogueItem.ItemUrl;
                 await page.NavigatePage(url);
-                Maybe<IElementHandle> titleElement = await page.GetElementRetriable("div.js-item-view-title-info", retryAmount: 3);
+                Maybe<IElementHandle> titleElement = await page.GetElementRetriable(
+                    "div.js-item-view-title-info",
+                    retryAmount: 3
+                );
                 if (titleElement.HasValue == false)
                 {
-                    solved = await new AvitoByPassFirewallWithRetry(new AvitoBypassFirewallLazy(page, new AvitoBypassFirewall(page))).Bypass();
+                    solved = await new AvitoByPassFirewallWithRetry(
+                        new AvitoBypassFirewallLazy(page, new AvitoBypassFirewall(page))
+                    ).Bypass();
                     if (!solved)
                     {
                         continue;
@@ -74,21 +87,29 @@ public sealed class BrowserTests(PuppeteerTestFixture fixture) : IClassFixture<P
     [Fact]
     public async Task Scrape_Catalogue_Only()
     {
-        const string targetUrl = "https://www.avito.ru/all/gruzoviki_i_spetstehnika/pogruzchiki-ASgBAgICAURU4E0";
+        const string targetUrl =
+            "https://www.avito.ru/all/gruzoviki_i_spetstehnika/pogruzchiki-ASgBAgICAURU4E0";
         BrowserFactory factory = new BrowserFactory();
         IBrowser browser = await factory.ProvideBrowser(headless: false);
         IPage page = await browser.GetPage();
         await page.NavigatePage(targetUrl);
-        bool solved = await new AvitoByPassFirewallWithRetry(new AvitoBypassFirewallLazy(page, new AvitoBypassFirewall(page))).Bypass();
-        if (!solved) return;
+        bool solved = await new AvitoByPassFirewallWithRetry(
+            new AvitoBypassFirewallLazy(page, new AvitoBypassFirewall(page))
+        ).Bypass();
+        if (!solved)
+            return;
 
         await page.ScrollBottom();
         await page.ScrollTop();
         AvitoPagination pagination = await AvitoPagination.FromCatalogue(page, targetUrl);
         await pagination.ProcessWhileNotReachedMaxPage(async () =>
         {
-            solved = await new AvitoByPassFirewallWithRetry(new AvitoBypassFirewallLazy(page, new AvitoBypassFirewall(page))).Bypass();
-            AvitoCatalogueItemsCollection items = await AvitoCatalogueItemsCollection.FromCatalogue(page);
+            solved = await new AvitoByPassFirewallWithRetry(
+                new AvitoBypassFirewallLazy(page, new AvitoBypassFirewall(page))
+            ).Bypass();
+            AvitoCatalogueItemsCollection items = await AvitoCatalogueItemsCollection.FromCatalogue(
+                page
+            );
             // save these items to database.
         });
     }
