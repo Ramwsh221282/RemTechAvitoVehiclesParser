@@ -1,13 +1,12 @@
 using Dapper;
 using ParsingSDK.Parsing;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
-using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 using System.Data;
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 
 public static class PostgreSqlWorkStageStorageExtension
-{    
+{
     extension(ParserWorkStage)
     {
         public static async Task<Maybe<ParserWorkStage>> GetSingle(
@@ -18,7 +17,7 @@ public static class PostgreSqlWorkStageStorageExtension
         {
             (DynamicParameters parameters, string filterSql) = query.WhereClause();
             string lockClause = query.LockClause();
-            string sql = 
+            string sql =
             $"""
             SELECT 
             id as id, 
@@ -29,13 +28,13 @@ public static class PostgreSqlWorkStageStorageExtension
             LIMIT 1
             """;
             CommandDefinition command = session.FormCommand(sql, parameters, ct);
-            using IDataReader reader = await session.ExecuteReader(command, ct);            
+            using IDataReader reader = await session.ExecuteReader(command, ct);
             while (reader.Read())
             {
                 Guid id = reader.GetGuid(reader.GetOrdinal("id"));
                 string name = reader.GetString(reader.GetOrdinal("name"));
                 return Maybe<ParserWorkStage>.Some(new ParserWorkStage(id, name));
-            }            
+            }
 
             return Maybe<ParserWorkStage>.None();
         }
@@ -45,7 +44,7 @@ public static class PostgreSqlWorkStageStorageExtension
     {
         public async Task Update(NpgSqlSession session, CancellationToken ct = default)
         {
-            const string sql = 
+            const string sql =
             """
             UPDATE avito_parser_module.work_stages 
             SET name = @name 
@@ -57,7 +56,7 @@ public static class PostgreSqlWorkStageStorageExtension
 
         public async Task Persist(NpgSqlSession session, CancellationToken ct = default)
         {
-            const string sql = 
+            const string sql =
             """
             INSERT INTO avito_parser_module.work_stages(id, name)
             VALUES(@id, @name)
@@ -69,8 +68,8 @@ public static class PostgreSqlWorkStageStorageExtension
         private object Parameters => new
         {
             id = stage.Id,
-            name = stage.Name,            
-        };     
+            name = stage.Name,
+        };
     }
 
     extension(WorkStageQuery query)
@@ -96,7 +95,7 @@ public static class PostgreSqlWorkStageStorageExtension
             return (parameters, resultSql);
         }
 
-        private string LockClause() => query.WithLock ? "FOR UPDATE" : string.Empty;        
-        private string LimitClause() => query.Limit.HasValue ? $"LIMIT {query.Limit}" : string.Empty;        
+        private string LockClause() => query.WithLock ? "FOR UPDATE" : string.Empty;
+        private string LimitClause() => query.Limit.HasValue ? $"LIMIT {query.Limit}" : string.Empty;
     }
 }

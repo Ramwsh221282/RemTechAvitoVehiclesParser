@@ -1,12 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using ParsingSDK.Parsing;
-using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Database;
-using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models;
-using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
-using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
-using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-
-namespace Tests.ParserWorkStartTests;
+﻿namespace Tests.ParserWorkStartTests;
 
 public sealed class StartParserWorkTest(ParserWorkStartFixture fixture)
     : IClassFixture<ParserWorkStartFixture>

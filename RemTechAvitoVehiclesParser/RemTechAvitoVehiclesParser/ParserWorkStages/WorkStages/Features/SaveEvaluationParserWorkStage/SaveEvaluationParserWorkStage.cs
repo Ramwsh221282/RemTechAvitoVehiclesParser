@@ -1,5 +1,4 @@
 ﻿using RemTech.SharedKernel.Infrastructure.NpgSql;
-using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;

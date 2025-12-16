@@ -1,14 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-using RemTech.SharedKernel.Infrastructure.RabbitMq;
-using RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.ConfirmPendingCreationTicket;
-using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-
-namespace Tests.ParserServiceRegistrationTests;
+﻿namespace Tests.ParserServiceRegistrationTests;
 
 public sealed class TestConfirmPendingRegistrationTicketService(
     IServiceProvider sp,

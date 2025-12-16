@@ -1,4 +1,4 @@
-﻿namespace RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Models;
+﻿namespace RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
 
 public static class CataloguePageUrlConstruction
 {

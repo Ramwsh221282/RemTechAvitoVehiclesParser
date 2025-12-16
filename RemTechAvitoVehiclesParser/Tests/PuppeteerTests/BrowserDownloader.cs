@@ -1,6 +1,3 @@
-using PuppeteerSharp;
-using PuppeteerSharp.BrowserData;
-
 namespace Tests.PuppeteerTests;
 
 public sealed class BrowserDownloader

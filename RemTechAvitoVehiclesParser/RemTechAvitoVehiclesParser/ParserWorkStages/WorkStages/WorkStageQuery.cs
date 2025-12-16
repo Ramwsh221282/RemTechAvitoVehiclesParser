@@ -1,4 +1,4 @@
-﻿namespace RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
+﻿namespace RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages;
 
 public sealed record WorkStageQuery(
     Guid? Id = null,

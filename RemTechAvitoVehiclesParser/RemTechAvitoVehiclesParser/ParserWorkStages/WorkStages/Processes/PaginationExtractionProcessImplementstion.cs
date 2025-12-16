@@ -3,9 +3,8 @@ using PuppeteerSharp;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
 using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models.Extensions;
+using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing;
 using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Models;
-using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 

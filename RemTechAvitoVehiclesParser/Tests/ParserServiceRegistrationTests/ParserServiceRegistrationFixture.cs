@@ -1,11 +1,4 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using RemTech.Tests.Shared;
-using Testcontainers.PostgreSql;
-using Testcontainers.RabbitMq;
-
-namespace Tests.ParserServiceRegistrationTests;
+﻿namespace Tests.ParserServiceRegistrationTests;
 
 public sealed class ParserServiceRegistrationFixture : WebApplicationFactory<RemTechAvitoVehiclesParser.Program>, IAsyncLifetime
 {

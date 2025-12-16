@@ -1,11 +1,4 @@
-﻿using System.Text;
-using Microsoft.Extensions.Hosting;
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-using RemTech.SharedKernel.Infrastructure.RabbitMq;
-using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-
-namespace Tests.ParserServiceRegistrationTests;
+﻿namespace Tests.ParserServiceRegistrationTests;
 
 public sealed class TestParserRegistrationTicketApprovalService(
     RabbitMqConnectionSource rabbitMqConnectionFactory,

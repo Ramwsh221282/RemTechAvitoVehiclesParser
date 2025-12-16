@@ -1,10 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
-using RabbitMQ.Client;
-using RemTech.SharedKernel.Infrastructure.RabbitMq;
-using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
-
-namespace Tests.ParserWorkStartTests;
+﻿namespace Tests.ParserWorkStartTests;
 
 public sealed class TestStartParserWorkPublisher(
     RabbitMqConnectionSource connectionFactory

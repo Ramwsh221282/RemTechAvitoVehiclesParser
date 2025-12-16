@@ -1,11 +1,4 @@
-﻿using AvitoFirewallBypass;
-using Microsoft.Extensions.DependencyInjection;
-using ParsingSDK.Parsing;
-using ParsingSDK.TextProcessing;
-using PuppeteerSharp;
-using RemTechAvitoVehiclesParser.Parsing;
-
-namespace Tests.PuppeteerTests;
+﻿namespace Tests.PuppeteerTests;
 
 public sealed class BrowserTests(PuppeteerTestFixture fixture) : IClassFixture<PuppeteerTestFixture>
 {

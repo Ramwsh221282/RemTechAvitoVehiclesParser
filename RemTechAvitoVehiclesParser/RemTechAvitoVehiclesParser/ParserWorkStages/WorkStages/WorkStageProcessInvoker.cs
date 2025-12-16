@@ -2,7 +2,6 @@ using ParsingSDK.Parsing;
 using Quartz;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
 using RemTech.SharedKernel.Infrastructure.Quartz;
-using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 
@@ -17,14 +16,14 @@ public sealed class WorkStageProcessInvoker(WorkStageProcessDependencies deps) :
         Maybe<ParserWorkStage> workStage = await GetWorkStage(context.CancellationToken);
         if (!workStage.HasValue) return;
 
-        WorkStageProcess process = WorkStageProcessRouter.Route(workStage.Value);   
+        WorkStageProcess process = WorkStageProcessRouter.Route(workStage.Value);
         await process(deps, context.CancellationToken);
     }
 
     private async Task<Maybe<ParserWorkStage>> GetWorkStage(CancellationToken ct)
     {
         WorkStageQuery query = new();
-        await using NpgSqlSession session = new(deps.NpgSql);                
+        await using NpgSqlSession session = new(deps.NpgSql);
         Maybe<ParserWorkStage> workStage = await ParserWorkStage.GetSingle(session, query, ct);
         return workStage;
     }

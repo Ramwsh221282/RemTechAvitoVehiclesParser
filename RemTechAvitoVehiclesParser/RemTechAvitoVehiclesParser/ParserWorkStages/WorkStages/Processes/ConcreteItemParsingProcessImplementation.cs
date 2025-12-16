@@ -2,15 +2,12 @@ using ParsingSDK.Parsing;
 using ParsingSDK.TextProcessing;
 using PuppeteerSharp;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
-using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Database;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Models;
-using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Database;
+using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Models;
-using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 using RemTechAvitoVehiclesParser.Parsing;
+using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing;
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Processes;
 
@@ -22,24 +19,58 @@ public static class ConcreteItemParsingProcessImplementation
         {
             Serilog.ILogger logger = deps.Logger.ForContext<WorkStageProcess>();
             await using NpgSqlSession session = new(deps.NpgSql);
-            
-            NpgSqlCataloguePageItemsStorage itemsStorage = new(session);
-            NpgSqlPendingToPublishItemsStorage npgSqlPendingItemsStorage = new(session);
-
             await session.UseTransaction(ct);
+
             WorkStageQuery stageQuery = new(Name: WorkStageConstants.ConcreteItemStageName, WithLock: true);
             Maybe<ParserWorkStage> workStage = await ParserWorkStage.GetSingle(session, stageQuery, ct);
             if (!workStage.HasValue) return;
 
-            CataloguePageItemQuery itemsQuery = new(NotProcessedOnly: true, Limit: 50, RetryLimitTreshold: 5);
-            CataloguePageItem[] items = [.. await itemsStorage.GetItems(itemsQuery, ct)];
+            CataloguePageItemQuery itemsQuery = new(UnprocessedOnly: true, Limit: 50, RetryCount: 5);
+            CataloguePageItem[] items = await CataloguePageItem.GetMany(session, itemsQuery, ct: ct);
             if (items.Length == 0)
             {
-                ParserWorkStage finalStage = workStage.Value.ChangeStage(new FinalizationWorkStage(workStage.Value));                
-                await finalStage.Update(session, ct);
-                await session.UnsafeCommit(ct);                
-                logger.Information("Switched to: {Stage}", finalStage.Name);
+                workStage.Value.ToFinalizationStage();
+                await workStage.Value.Update(session, ct);
+                await session.UnsafeCommit(ct);
+                logger.Information("Switched to: {Stage}", workStage.Value.Name);
                 return;
+            }
+
+            List<PendingToPublishItem> results = [];
+            IBrowser browser = await deps.Browsers.ProvideBrowser(headless: true);
+            for (int i = 0; i < items.Length; i++)
+            {
+                CataloguePageItem target = items[i];
+
+                try
+                {
+                    PendingToPublishItem pending = await target.ExtractPendingItem(
+                        browser,
+                        deps.Bypasses,
+                        ITextTransformer transformer
+                        );
+
+                }
+                catch (ArgumentNullException)
+                {
+                    logger.Error("Null reference exception in browser. Recreating browser");
+                    await browser.DestroyAsync();
+                    browser = await deps.Browsers.ProvideBrowser(headless: false);
+                }
+                catch (NullReferenceException)
+                {
+                    logger.Error("Null reference exception in browser. Recreating browser");
+                    await browser.DestroyAsync();
+                    browser = await deps.Browsers.ProvideBrowser(headless: false);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, "Error at extracting concrete item {Url}.", target.Url);
+                }
+                finally
+                {
+
+                }
             }
 
             (IEnumerable<CataloguePageItem> catalogueItems, IEnumerable<PendingToPublishItem> results) = await ProcessItems(items, deps);
@@ -109,7 +140,7 @@ public static class ConcreteItemParsingProcessImplementation
 
         await browser.DestroyAsync();
         return (processed, pendingItems);
-    }    
+    }
 
     private static async Task<(CataloguePageItem, bool)> ResolveByPropertiesExistance(
         ITextTransformer transformer,
@@ -127,27 +158,5 @@ public static class ConcreteItemParsingProcessImplementation
         bool hasAddress = await advertisement.HasAddress(transformer);
         if (!hasAddress) return (item.IncreaseRetry(), false);
         return (item.MarkProcessed(), true);
-    }
-
-
-    private static PendingToPublishItem CreatePending(
-        string id,
-        string url,
-        IEnumerable<string> photos,
-        AvitoSpecialEquipmentAdvertisementSnapshot advertisement
-        )
-    {
-        return new(
-            Id: id,
-            Url: url,
-            Title: advertisement.Title,
-            Address: advertisement.Address,
-            Price: advertisement.Price,
-            IsNds: advertisement.IsNds,
-            DescriptionList: advertisement.DescriptionList,
-            Characteristics: advertisement.Characteristics,
-            Photos: [.. photos],
-            WasProcessed: false
-        );
     }
 }

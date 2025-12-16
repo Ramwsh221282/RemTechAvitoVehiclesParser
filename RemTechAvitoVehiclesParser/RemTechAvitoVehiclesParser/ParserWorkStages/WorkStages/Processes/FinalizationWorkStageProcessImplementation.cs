@@ -1,11 +1,8 @@
 using ParsingSDK.Parsing;
 using ParsingSDK.TextProcessing;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
-using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Models;
-using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Database;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 
@@ -18,7 +15,7 @@ public static class FinalizationWorkStageProcessImplementation
         public static WorkStageProcess Finalization => async (deps, ct) =>
         {
             Serilog.ILogger logger = deps.Logger.ForContext<WorkStageProcess>();
-            await using NpgSqlSession session = new(deps.NpgSql);            
+            await using NpgSqlSession session = new(deps.NpgSql);
             NpgSqlPendingToPublishItemsStorage pendingItemsStorage = new(session);
             await session.UseTransaction(ct);
 
@@ -63,7 +60,8 @@ public static class FinalizationWorkStageProcessImplementation
                 logger.Information("Published result: {Content}", content);
                 PendingToPublishItem processedItem = item.MarkProcessed();
                 processed.Add(processedItem);
-            };
+            }
+            ;
         };
     }
 }

@@ -1,8 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using ParsingSDK.Parsing;
-using Serilog;
-
-namespace Tests.PuppeteerTests;
+﻿namespace Tests.PuppeteerTests;
 
 public sealed class PuppeteerTestFixture : IAsyncLifetime
 {

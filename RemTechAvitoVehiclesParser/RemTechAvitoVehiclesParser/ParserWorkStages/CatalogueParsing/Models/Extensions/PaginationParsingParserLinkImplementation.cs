@@ -1,7 +1,8 @@
 ﻿using AvitoFirewallBypass;
 using ParsingSDK.Parsing;
 using PuppeteerSharp;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Models;
+using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing;
+using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models.Extensions;
 

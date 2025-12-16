@@ -1,8 +1,8 @@
-﻿namespace RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Models;
+﻿namespace RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing;
 
 public sealed record CataloguePageItem(
     string Id,
-    Guid CatalogueUrlId,
+    string Url,
     string Payload,
     bool WasProcessed,
     int RetryCount);

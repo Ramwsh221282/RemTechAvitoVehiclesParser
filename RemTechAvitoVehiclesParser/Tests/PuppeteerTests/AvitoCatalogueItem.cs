@@ -1,7 +1,4 @@
-﻿using ParsingSDK.Parsing;
-using PuppeteerSharp;
-
-namespace Tests.PuppeteerTests;
+﻿namespace Tests.PuppeteerTests;
 
 public sealed class AvitoCatalogueItem
 {

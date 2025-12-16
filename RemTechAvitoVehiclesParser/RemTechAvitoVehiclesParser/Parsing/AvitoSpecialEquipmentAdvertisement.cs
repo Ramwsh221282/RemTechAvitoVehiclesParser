@@ -131,7 +131,16 @@ public sealed class AvitoSpecialEquipmentAdvertisement : ISnapshotSource<AvitoSp
         string itemUrl,
         AvitoBypassFactory bypassFactory)
     {
-        await page.NavigatePage(itemUrl);
+        NavigationOptions opts = new() { Timeout = 500 };
+        try
+        {
+            await page.GoToAsync(itemUrl, opts);
+        }
+        catch
+        {
+            
+        }
+
         bool bypassed = await bypassFactory.Create(page).Bypass();
         await page.ScrollBottom();
         return new AvitoSpecialEquipmentAdvertisement(page, bypassed);
@@ -153,10 +162,34 @@ public sealed class AvitoSpecialEquipmentAdvertisement : ISnapshotSource<AvitoSp
         Title = GetTitle()
     };
 
+    public async Task<bool> IsValid()
+    {
+        EmptyTextTransformer transformer = new();
+        bool hasTitle = await HasTitle();
+        if (!hasTitle) return false;
+        bool hasPrice = await HasPrice();
+        if (!hasPrice) return false;
+        bool hasCharacteristics = await HasCharacteristics();
+        if (!hasCharacteristics) return false;
+        bool hasDescription = await HasDescription(transformer);
+        if (!hasDescription) return false;
+        bool hasAddress = await HasAddress(transformer);
+        if (!hasAddress) return false;
+        return true;
+    }
+
     private string GetAddress() => (_properties["address"] as string)!;
     private IReadOnlyList<string> GetCharacteristics() => (_properties["characteristics"] as IReadOnlyList<string>)!;
     private long GetPrice() => (long)_properties["price"];
     private bool GetIsNds() => (bool)_properties["is_nds"];
     private string GetTitle() => (_properties["title"] as string)!;
     private IReadOnlyList<string> GetDescription() => (_properties["description_list"] as IReadOnlyList<string>)!;
+
+    private class EmptyTextTransformer : ITextTransformer
+    {
+        public string TransformText(string text)
+        {
+            return text;
+        }
+    }
 }

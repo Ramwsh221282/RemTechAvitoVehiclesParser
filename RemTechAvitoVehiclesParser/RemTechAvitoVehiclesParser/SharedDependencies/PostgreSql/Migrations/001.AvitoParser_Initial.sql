@@ -40,14 +40,10 @@ CREATE TABLE IF NOT EXISTS avito_parser_module.catalogue_urls
 
 CREATE TABLE IF NOT EXISTS avito_parser_module.catalogue_items
 (
-    id varchar(32) primary key,
-    catalogue_url_id uuid not null,    
+    id varchar(64) primary key,    
     was_processed boolean not null,
     retry_count integer not null,
-    payload jsonb not null,
-    CONSTRAINT catalogue_url_id FOREIGN KEY(catalogue_url_id)
-    REFERENCES avito_parser_module.catalogue_urls(id)
-    ON DELETE CASCADE 
+    payload jsonb not null    
 );
 
 CREATE TABLE IF NOT EXISTS avito_parser_module.pending_items
