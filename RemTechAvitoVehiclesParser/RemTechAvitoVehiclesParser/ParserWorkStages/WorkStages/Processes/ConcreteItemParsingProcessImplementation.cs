@@ -1,13 +1,12 @@
+using AvitoFirewallBypass;
 using ParsingSDK.Parsing;
-using ParsingSDK.TextProcessing;
 using PuppeteerSharp;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
+using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing;
 using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
-using RemTechAvitoVehiclesParser.Parsing;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing;
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Processes;
 
@@ -17,8 +16,16 @@ public static class ConcreteItemParsingProcessImplementation
     {
         public static WorkStageProcess ConcreteItems => async (deps, ct) =>
         {
-            Serilog.ILogger logger = deps.Logger.ForContext<WorkStageProcess>();
-            await using NpgSqlSession session = new(deps.NpgSql);
+            deps.Deconstruct(
+                out BrowserFactory browsers,
+                out AvitoBypassFactory bypass,
+                out _,
+                out Serilog.ILogger dLogger,
+                out NpgSqlConnectionFactory npgSql
+            );
+
+            Serilog.ILogger logger = dLogger.ForContext<WorkStageProcess>();
+            await using NpgSqlSession session = new(npgSql);
             await session.UseTransaction(ct);
 
             WorkStageQuery stageQuery = new(Name: WorkStageConstants.ConcreteItemStageName, WithLock: true);
@@ -36,127 +43,59 @@ public static class ConcreteItemParsingProcessImplementation
                 return;
             }
 
-            List<PendingToPublishItem> results = [];
-            IBrowser browser = await deps.Browsers.ProvideBrowser(headless: true);
-            for (int i = 0; i < items.Length; i++)
-            {
-                CataloguePageItem target = items[i];
-
-                try
-                {
-                    PendingToPublishItem pending = await target.ExtractPendingItem(
-                        browser,
-                        deps.Bypasses,
-                        ITextTransformer transformer
-                        );
-
-                }
-                catch (ArgumentNullException)
-                {
-                    logger.Error("Null reference exception in browser. Recreating browser");
-                    await browser.DestroyAsync();
-                    browser = await deps.Browsers.ProvideBrowser(headless: false);
-                }
-                catch (NullReferenceException)
-                {
-                    logger.Error("Null reference exception in browser. Recreating browser");
-                    await browser.DestroyAsync();
-                    browser = await deps.Browsers.ProvideBrowser(headless: false);
-                }
-                catch (Exception ex)
-                {
-                    logger.Error(ex, "Error at extracting concrete item {Url}.", target.Url);
-                }
-                finally
-                {
-
-                }
-            }
-
-            (IEnumerable<CataloguePageItem> catalogueItems, IEnumerable<PendingToPublishItem> results) = await ProcessItems(items, deps);
-
-            await itemsStorage.UpdateMany(catalogueItems);
-            await npgSqlPendingItemsStorage.SaveMany(results);
-
+            IBrowser browser = await browsers.ProvideBrowser(headless: true);
+            PendingToPublishItem[] results = await ProcessCatalogueItems(items, logger, browsers, bypass);
             if (!await session.Commited(ct)) logger.Error("Error at committing transaction.");
         };
     }
 
-    private static async Task<(IEnumerable<CataloguePageItem>, IEnumerable<PendingToPublishItem>)> ProcessItems(
+    private static async Task<PendingToPublishItem[]> ProcessCatalogueItems(
         CataloguePageItem[] items,
-        WorkStageProcessDependencies deps)
+        Serilog.ILogger logger,
+        BrowserFactory browsers,
+        AvitoBypassFactory bypasser)
     {
-        Serilog.ILogger logger = deps.Logger.ForContext<WorkStageProcess>();
-        ITextTransformer transformer = deps.TextTransformerBuilder
-            .UsePunctuationCleaner()
-            .UseEmojiCleaner()
-            .UseNewLinesCleaner()
-            .UseSpacesCleaner()
-            .Build();
+        IBrowser browser = await browsers.ProvideBrowser(headless: false);
+        List<PendingToPublishItem> results = [];
 
-
-        IBrowser browser = await deps.Browsers.ProvideBrowser(headless: false);
-        List<CataloguePageItem> processed = [];
-        List<PendingToPublishItem> pendingItems = [];
-        foreach (CataloguePageItem item in items)
+        async Task<IBrowser> Recreate(IBrowser oldBrowser)
         {
-            string url = item.ReadUrl();
-            IReadOnlyList<string> photos = item.ReadPhotos();
+            await oldBrowser.DestroyAsync();
+            return await browsers.ProvideBrowser(headless: false);
+        }
+
+        for (int i = 0; i < items.Length; i++)
+        {
+            CataloguePageItem target = items[i];
 
             try
             {
-                logger.Information("Processing concrete item: {Url}", url);
-                var advertisement = await AvitoSpecialEquipmentAdvertisement.Create(await browser.GetPage(), url, deps.Bypasses);
-                (CataloguePageItem result, bool success) = await ResolveByPropertiesExistance(transformer, item, advertisement);
-                if (success)
-                {
-                    AvitoSpecialEquipmentAdvertisementSnapshot advertisementSnapshot = advertisement.GetSnapshot();
-                    PendingToPublishItem pendingItem = CreatePending(item.Id, url, photos, advertisementSnapshot);
-                    pendingItems.Add(pendingItem);
-                }
-
-
-                processed.Add(result);
+                PendingToPublishItem pendingItem = await target.CreatePendingItem(browser, bypasser);
+                results.Add(pendingItem);
+                target = target.MarkProcessed();
+                logger.Information("Processed item: {Url}", target.Url);
             }
             catch (ArgumentNullException)
             {
                 logger.Error("Null reference exception in browser. Recreating browser");
-                await browser.DestroyAsync();
-                browser = await deps.Browsers.ProvideBrowser(headless: false);
+                browser = await Recreate(browser);
             }
             catch (NullReferenceException)
             {
                 logger.Error("Null reference exception in browser. Recreating browser");
-                await browser.DestroyAsync();
-                browser = await deps.Browsers.ProvideBrowser(headless: false);
+                browser = await Recreate(browser);
             }
             catch (Exception ex)
             {
-                logger.Error(ex, "Failed to process advertisement. URL: {Url}", url);
-                CataloguePageItem result = item.IncreaseRetry();
-                processed.Add(result);
+                logger.Error(ex, "Error at extracting concrete item {Url}.", target.Url);
+                target = target.IncreaseRetry();
+            }
+            finally
+            {
+                items[i] = target;
             }
         }
 
-        await browser.DestroyAsync();
-        return (processed, pendingItems);
-    }
-
-    private static async Task<(CataloguePageItem, bool)> ResolveByPropertiesExistance(
-        ITextTransformer transformer,
-        CataloguePageItem item,
-        AvitoSpecialEquipmentAdvertisement advertisement)
-    {
-        bool hasTitle = await advertisement.HasTitle();
-        if (!hasTitle) return (item.IncreaseRetry(), false);
-        bool hasPrice = await advertisement.HasPrice();
-        if (!hasPrice) return (item.IncreaseRetry(), false);
-        bool hasCharacteristics = await advertisement.HasCharacteristics();
-        if (!hasCharacteristics) return (item.IncreaseRetry(), false);
-        bool hasDescription = await advertisement.HasDescription(transformer);
-        if (!hasDescription) return (item.IncreaseRetry(), false);
-        bool hasAddress = await advertisement.HasAddress(transformer);
-        if (!hasAddress) return (item.IncreaseRetry(), false);
-        return (item.MarkProcessed(), true);
+        return [.. results];
     }
 }

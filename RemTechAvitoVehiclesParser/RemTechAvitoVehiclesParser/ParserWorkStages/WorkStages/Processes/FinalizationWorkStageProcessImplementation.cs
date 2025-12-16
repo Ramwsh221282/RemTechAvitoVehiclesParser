@@ -14,8 +14,16 @@ public static class FinalizationWorkStageProcessImplementation
     {
         public static WorkStageProcess Finalization => async (deps, ct) =>
         {
-            Serilog.ILogger logger = deps.Logger.ForContext<WorkStageProcess>();
-            await using NpgSqlSession session = new(deps.NpgSql);
+            deps.Deconstruct(
+                out BrowserFactory browsers,
+                out _,
+                out TextTransformerBuilder textTransformerBuilder,
+                out Serilog.ILogger dLogger,
+                out NpgSqlConnectionFactory npgSql
+            );
+
+            Serilog.ILogger logger = dLogger.ForContext<WorkStageProcess>();
+            await using NpgSqlSession session = new(npgSql);
             NpgSqlPendingToPublishItemsStorage pendingItemsStorage = new(session);
             await session.UseTransaction(ct);
 
@@ -27,8 +35,8 @@ public static class FinalizationWorkStageProcessImplementation
             PendingToPublishItem[] items = [.. await pendingItemsStorage.GetMany(itemsQuery, ct)];
             if (items.Length == 0)
             {
-                ParserWorkStage sleeping = stage.Value.ChangeStage(new SleepingWorkStage(stage.Value));
-                await sleeping.Update(session, ct);
+                stage.Value.ToSleepingStage();
+                await stage.Value.Update(session, ct);
                 await session.UnsafeCommit(ct);
                 logger.Information("Switched to sleeping work stage.");
                 return;
@@ -36,11 +44,7 @@ public static class FinalizationWorkStageProcessImplementation
 
             string resultsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "results");
             List<PendingToPublishItem> processed = [];
-
-            ITextTransformer transformer = deps
-            .TextTransformerBuilder
-            .UseSpacesCleaner()
-            .Build();
+            ITextTransformer transformer = textTransformerBuilder.UseSpacesCleaner().Build();
 
             foreach (PendingToPublishItem item in items)
             {

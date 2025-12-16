@@ -2,7 +2,7 @@
 using AvitoFirewallBypass;
 using ParsingSDK.Parsing;
 using PuppeteerSharp;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Models;
+
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
 

@@ -33,7 +33,8 @@ public static class PostgreSqlWorkStageStorageExtension
             {
                 Guid id = reader.GetGuid(reader.GetOrdinal("id"));
                 string name = reader.GetString(reader.GetOrdinal("name"));
-                return Maybe<ParserWorkStage>.Some(new ParserWorkStage(id, name));
+                ParserWorkStage stage = ParserWorkStage.Create(id, name);
+                return Maybe<ParserWorkStage>.Some(stage);
             }
 
             return Maybe<ParserWorkStage>.None();

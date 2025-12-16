@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
+using AvitoFirewallBypass;
 using ParsingSDK.Parsing;
 using PuppeteerSharp;
 using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Models;
-using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages;
 using RemTechAvitoVehiclesParser.Parsing;
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
@@ -44,15 +44,12 @@ public static class CataloguePageItemImplementation
             return photos;
         }
 
-        private async Task<PendingToPublishItem> CreatePendingItem(
-          IBrowser browser,
-          WorkStageProcessDependencies deps
-        )
+        public async Task<PendingToPublishItem> CreatePendingItem(IBrowser browser, AvitoBypassFactory bypass)
         {
             string url = item.ReadUrl();
             IReadOnlyList<string> photos = item.ReadPhotos();
-            AvitoSpecialEquipmentAdvertisement advertisement =
-              await AvitoSpecialEquipmentAdvertisement.Create(await browser.GetPage(), url, deps.Bypasses);
+            IPage page = await browser.GetPage();
+            AvitoSpecialEquipmentAdvertisement advertisement = await AvitoSpecialEquipmentAdvertisement.Create(page, url, bypass);
             if (!await advertisement.IsValid())
                 throw new InvalidOperationException("Invalid advertisement.");
 
@@ -81,6 +78,4 @@ public static class CataloguePageItemImplementation
             );
         }
     }
-}
-
 }

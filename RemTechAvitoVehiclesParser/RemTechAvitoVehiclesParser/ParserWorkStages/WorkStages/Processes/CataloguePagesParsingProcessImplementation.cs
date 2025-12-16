@@ -6,6 +6,7 @@ using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
+using AvitoFirewallBypass;
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Processes;
 
@@ -16,8 +17,16 @@ public static class CataloguePagesParsingProcessImplementation
         public static WorkStageProcess CatalogueProcess =>
             async (deps, ct) =>
             {
-                Serilog.ILogger logger = deps.Logger.ForContext<WorkStageProcess>();
-                await using NpgSqlSession session = new(deps.NpgSql);
+                deps.Deconstruct(
+                    out BrowserFactory browsers,
+                    out AvitoBypassFactory bypasses,
+                    out _,
+                    out Serilog.ILogger dLogger,
+                    out NpgSqlConnectionFactory npgSql
+                );
+
+                Serilog.ILogger logger = dLogger.ForContext<WorkStageProcess>();
+                await using NpgSqlSession session = new(npgSql);
                 await session.UseTransaction(ct);
 
                 WorkStageQuery stageQuery = new(
@@ -43,6 +52,7 @@ public static class CataloguePagesParsingProcessImplementation
                 if (urls.Length == 0)
                 {
                     stage.Value.ToConcreteStage();
+                    await stage.Value.Update(session, ct);
                     await session.UnsafeCommit(ct);
                     logger.Information("Switched to stage: {Stage}", stage.Value.Name);
                     return;
