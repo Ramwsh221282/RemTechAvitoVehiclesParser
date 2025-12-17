@@ -69,7 +69,7 @@ public sealed class FakeParserSubscriptionQueue(
         string json = Encoding.UTF8.GetString(body);
         using JsonDocument document = JsonDocument.Parse(json);
 
-        Guid parserId = document.RootElement.GetProperty("id").GetGuid();
+        Guid parserId = document.RootElement.GetProperty("parser_id").GetGuid();
         string parserType = document.RootElement.GetProperty("parser_type").GetString()!;
         string parserDomain = document.RootElement.GetProperty("parser_domain").GetString()!;
         

@@ -17,8 +17,8 @@ public sealed class FakeParserSubscriptionQueuePublisher(RabbitMqConnectionSourc
         string queue = $"{exchange}.confirmation";
         string routingKey = $"{exchange}.confirmation";
         
-        await channel.ExchangeDeclareAsync(exchange: exchange,type: "topic");
-        await channel.QueueDeclareAsync(queue: queue);
+        await channel.ExchangeDeclareAsync(exchange: exchange, durable: true, autoDelete: false, type: "topic");
+        await channel.QueueDeclareAsync(queue: queue, durable: false, autoDelete: false, exclusive: false);
         await channel.QueueBindAsync(queue: queue, exchange: exchange, routingKey: routingKey);
 
         object payload = new
