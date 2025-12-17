@@ -10,6 +10,7 @@ public static class ParserWorkStagesDependencyInjection
         public void RegisterParserWorkStagesContext()
         {            
             services.AddTransient<ICronScheduleJob, WorkStageProcessInvoker>();
+            services.AddTransient<WorkStageProcessDependencies>();
         }                
     }
 }

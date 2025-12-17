@@ -1,10 +1,11 @@
 using ParsingSDK.Parsing;
 using PuppeteerSharp;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
-using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models;
-using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models.Extensions;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
+using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing;
+using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Extensions;
+using RemTechAvitoVehiclesParser.ParserWorkStages.Common.Commands.CreateCataloguePageUrls;
+using RemTechAvitoVehiclesParser.ParserWorkStages.PaginationParsing;
+using RemTechAvitoVehiclesParser.ParserWorkStages.PaginationParsing.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 
@@ -20,33 +21,13 @@ public static class PaginationExtractionProcessImplementation
                 Serilog.ILogger logger = deps.Logger.ForContext<WorkStageProcess>();
                 await using NpgSqlSession session = new(deps.NpgSql);
                 await session.UseTransaction(ct);
-
-                WorkStageQuery stageQuery = new(
-                    Name: WorkStageConstants.EvaluationStageName,
-                    WithLock: true
-                );
-
-                Maybe<ParserWorkStage> evalStage = await ParserWorkStage.GetSingle(
-                    session,
-                    stageQuery,
-                    ct
-                );
-
+                WorkStageQuery stageQuery = new(Name: WorkStageConstants.EvaluationStageName, WithLock: true);
+                Maybe<ParserWorkStage> evalStage = await ParserWorkStage.GetSingle(session, stageQuery, ct);
                 if (!evalStage.HasValue)
                     return;
 
-                ProcessingParserLinkQuery linksQuery = new(
-                    UnprocessedOnly: true,
-                    RetryLimit: 5,
-                    WithLock: true
-                );
-
-                ProcessingParserLink[] links = await ProcessingParserLink.GetMany(
-                    session,
-                    linksQuery,
-                    ct
-                );
-
+                ProcessingParserLinkQuery linksQuery = new(UnprocessedOnly: true, RetryLimit: 10, WithLock: true);
+                ProcessingParserLink[] links = await ProcessingParserLink.GetMany(session, linksQuery, ct: ct);
                 if (links.Length == 0)
                 {
                     evalStage.Value.ToCatalogueStage();
@@ -57,28 +38,23 @@ public static class PaginationExtractionProcessImplementation
                 }
 
                 logger.Information("Starting extracting pagination for links.");
-                IBrowser browser = await deps.Browsers.ProvideBrowser(headless: false);
+                IBrowser browser = await deps.Browsers.ProvideBrowser();
 
                 for (int i = 0; i < links.Length; i++)
                 {
                     ProcessingParserLink link = links[i];
-                    logger.Information("Extracting pagination for link: {Url}", link.Url);
-
                     try
                     {
-                        CataloguePageUrl[] pagedUrls = await link.ExtractPaginatedUrls(
-                            browser,
-                            deps.Bypasses
-                        );
+                        CataloguePageUrl[] pagedUrls = await new CreateCataloguePageUrlsCommand(() => browser.GetPage(), link.Url, deps.Bypasses)
+                            .UseLogging(deps.Logger)
+                            .Handle();
+                        
                         await pagedUrls.PersistMany(session);
-                        link.MarkProcessed();
-
-                        logger.Information(
-                            """ 
-                            Extracted {Length} paginated urls
-                            """,
-                            pagedUrls.Length
-                        );
+                        link = link.MarkProcessed();
+                    }
+                    catch (EvaluationFailedException)
+                    {
+                        browser = await deps.Browsers.Recreate(browser); 
                     }
                     catch (Exception ex)
                     {
@@ -97,6 +73,7 @@ public static class PaginationExtractionProcessImplementation
                 try
                 {
                     await session.UnsafeCommit(ct);
+                    logger.Information("Committed transaction.");
                 }
                 catch (Exception ex)
                 {

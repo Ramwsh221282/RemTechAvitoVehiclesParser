@@ -1,12 +1,13 @@
 using ParsingSDK.Parsing;
 using PuppeteerSharp;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing;
-using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Models;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
 using AvitoFirewallBypass;
+using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing;
+using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Extensions;
+using RemTechAvitoVehiclesParser.ParserWorkStages.Common;
+using RemTechAvitoVehiclesParser.ParserWorkStages.Common.Commands.ExtractCatalogueItemData;
 
 namespace RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Processes;
 
@@ -29,25 +30,16 @@ public static class CataloguePagesParsingProcessImplementation
                 await using NpgSqlSession session = new(npgSql);
                 await session.UseTransaction(ct);
 
-                WorkStageQuery stageQuery = new(
-                    Name: WorkStageConstants.CatalogueStageName,
-                    WithLock: true
-                );
-
-                Maybe<ParserWorkStage> stage = await ParserWorkStage.GetSingle(
-                    session,
-                    stageQuery,
-                    ct
-                );
+                WorkStageQuery stageQuery = new(Name: WorkStageConstants.CatalogueStageName, WithLock: true);
+                Maybe<ParserWorkStage> stage = await ParserWorkStage.GetSingle(session, stageQuery, ct);
                 if (!stage.HasValue) return;
 
                 CataloguePageUrlQuery pageUrlQuery = new(
                     UnprocessedOnly: true,
-                    RetryLimit: 5,
+                    RetryLimit: 10,
                     WithLock: true,
                     Limit: 20
                 );
-
                 CataloguePageUrl[] urls = await CataloguePageUrl.GetMany(session, pageUrlQuery, ct);
                 if (urls.Length == 0)
                 {
@@ -58,7 +50,7 @@ public static class CataloguePagesParsingProcessImplementation
                     return;
                 }
 
-                IBrowser browser = await deps.Browsers.ProvideBrowser(headless: false);
+                IBrowser browser = await deps.Browsers.ProvideBrowser();
 
                 for (int i = 0; i < urls.Length; i++)
                 {
@@ -67,13 +59,16 @@ public static class CataloguePagesParsingProcessImplementation
 
                     try
                     {
-                        CataloguePageItem[] items = await url.ExtractPageItems(browser, deps.Bypasses);
+                        AvitoVehicle[] items = await new ExtractCatalogueItemDataCommand(() => browser.GetPage(), url, bypasses).UseLogging(dLogger).Handle();
                         url = url.MarkProcessed();
-                        await items.PersistMany(session);
+                        await items.PersistAsCatalogueRepresentation(session);
                     }
-                    catch (Exception ex)
+                    catch(EvaluationFailedException)
                     {
-                        logger.Error(ex, "Error at processing: {Url}", url);
+                        browser = await browsers.Recreate(browser);
+                    }
+                    catch (Exception)
+                    {
                         url = url.IncrementRetryCount();
                     }
                     finally
@@ -88,6 +83,7 @@ public static class CataloguePagesParsingProcessImplementation
                 try
                 {
                     await session.UnsafeCommit(ct);
+                    logger.Information("Committed transaction.");
                 }
                 catch (Exception ex)
                 {

@@ -2,9 +2,8 @@ using AvitoFirewallBypass;
 using ParsingSDK.Parsing;
 using PuppeteerSharp;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing;
-using RemTechAvitoVehiclesParser.ParserWorkStages.ConcreteItemParsing.Extensions;
-using RemTechAvitoVehiclesParser.ParserWorkStages.PendingItemPublishing.Models;
+using RemTechAvitoVehiclesParser.ParserWorkStages.Common;
+using RemTechAvitoVehiclesParser.ParserWorkStages.Common.Commands.ExtractConcreteItem;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 
@@ -18,7 +17,7 @@ public static class ConcreteItemParsingProcessImplementation
         {
             deps.Deconstruct(
                 out BrowserFactory browsers,
-                out AvitoBypassFactory bypass,
+                out AvitoBypassFactory bypasses,
                 out _,
                 out Serilog.ILogger dLogger,
                 out NpgSqlConnectionFactory npgSql
@@ -32,8 +31,8 @@ public static class ConcreteItemParsingProcessImplementation
             Maybe<ParserWorkStage> workStage = await ParserWorkStage.GetSingle(session, stageQuery, ct);
             if (!workStage.HasValue) return;
 
-            CataloguePageItemQuery itemsQuery = new(UnprocessedOnly: true, Limit: 50, RetryCount: 5);
-            CataloguePageItem[] items = await CataloguePageItem.GetMany(session, itemsQuery, ct: ct);
+            AvitoItemQuery itemsQuery = new(UnprocessedOnly: true, Limit: 50, RetryCount: 10, CatalogueOnly: true);
+            AvitoVehicle[] items = await AvitoVehicle.GetAsCatalogueRepresentation(session, itemsQuery, ct: ct);
             if (items.Length == 0)
             {
                 workStage.Value.ToFinalizationStage();
@@ -42,60 +41,47 @@ public static class ConcreteItemParsingProcessImplementation
                 logger.Information("Switched to: {Stage}", workStage.Value.Name);
                 return;
             }
+            
+            IBrowser browser = await browsers.ProvideBrowser();
+            
+            for (int i = 0; i < items.Length; i++)
+            {
+                AvitoVehicle item = items[i];
+                logger.Information("Processing item: {Url}", item.CatalogueRepresentation.Url);
 
-            IBrowser browser = await browsers.ProvideBrowser(headless: true);
-            PendingToPublishItem[] results = await ProcessCatalogueItems(items, logger, browsers, bypass);
-            if (!await session.Commited(ct)) logger.Error("Error at committing transaction.");
-        };
-    }
-
-    private static async Task<PendingToPublishItem[]> ProcessCatalogueItems(
-        CataloguePageItem[] items,
-        Serilog.ILogger logger,
-        BrowserFactory browsers,
-        AvitoBypassFactory bypasser)
-    {
-        IBrowser browser = await browsers.ProvideBrowser(headless: false);
-        List<PendingToPublishItem> results = [];
-
-        async Task<IBrowser> Recreate(IBrowser oldBrowser)
-        {
-            await oldBrowser.DestroyAsync();
-            return await browsers.ProvideBrowser(headless: false);
-        }
-
-        for (int i = 0; i < items.Length; i++)
-        {
-            CataloguePageItem target = items[i];
+                try
+                {
+                    item = await new ExtractConcreteItemCommand(() => browser.GetPage(), item, bypasses).UseLogging(dLogger).Handle();
+                    item = item.MarkProcessed();
+                }
+                catch (EvaluationFailedException)
+                {
+                    logger.Error("Evaluation failed for item {Url}. Recreating browser", item.CatalogueRepresentation.Url);
+                    browser = await browsers.Recreate(browser);
+                }
+                catch(Exception ex)
+                {
+                    logger.Error(ex, "Error at extracting concrete item {Url}.", item.CatalogueRepresentation.Url);
+                    item = item.IncreaseRetryCount();
+                }
+                finally
+                {
+                    items[i] = item;
+                }
+            }
+            
+            await browser.DestroyAsync();
+            await items.UpdateFull(session);
 
             try
             {
-                PendingToPublishItem pendingItem = await target.CreatePendingItem(browser, bypasser);
-                results.Add(pendingItem);
-                target = target.MarkProcessed();
-                logger.Information("Processed item: {Url}", target.Url);
+                await session.UnsafeCommit(ct);
+                logger.Information("Committed transaction.");
             }
-            catch (ArgumentNullException)
+            catch(Exception ex)
             {
-                logger.Error("Null reference exception in browser. Recreating browser");
-                browser = await Recreate(browser);
+                logger.Error(ex, "Error at committing transaction");
             }
-            catch (NullReferenceException)
-            {
-                logger.Error("Null reference exception in browser. Recreating browser");
-                browser = await Recreate(browser);
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "Error at extracting concrete item {Url}.", target.Url);
-                target = target.IncreaseRetry();
-            }
-            finally
-            {
-                items[i] = target;
-            }
-        }
-
-        return [.. results];
+        };
     }
 }

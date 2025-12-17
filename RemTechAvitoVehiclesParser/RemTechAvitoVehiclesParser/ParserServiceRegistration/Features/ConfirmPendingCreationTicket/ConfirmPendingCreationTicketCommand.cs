@@ -1,3 +1,0 @@
-﻿namespace RemTechAvitoVehiclesParser.ParserServiceRegistration.Features.ConfirmPendingCreationTicket;
-
-public record ConfirmPendingCreationTicketCommand(Guid Id);

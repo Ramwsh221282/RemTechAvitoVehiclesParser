@@ -38,24 +38,16 @@ CREATE TABLE IF NOT EXISTS avito_parser_module.catalogue_urls
     retry_count integer not null
 );
 
-CREATE TABLE IF NOT EXISTS avito_parser_module.catalogue_items
+CREATE TABLE IF NOT EXISTS avito_parser_module.items
 (
     id varchar(64) primary key,    
+    url text not null,
     was_processed boolean not null,
     retry_count integer not null,
-    payload jsonb not null    
-);
-
-CREATE TABLE IF NOT EXISTS avito_parser_module.pending_items
-(
-   id varchar(32) primary key,
-   url text not null,
-   title varchar(128) not null,
-   address varchar(512) not null,
-   price bigint not null,
-   is_nds boolean not null,
-   description_list jsonb not null,
-   characteristics jsonb not null,
-   photos jsonb not null,
-   was_processed boolean not null
+    price bigint not null,
+    is_nds boolean not null,
+    address varchar(512) not null,
+    photos jsonb not null,
+    title varchar(512),
+    characteristics jsonb
 );

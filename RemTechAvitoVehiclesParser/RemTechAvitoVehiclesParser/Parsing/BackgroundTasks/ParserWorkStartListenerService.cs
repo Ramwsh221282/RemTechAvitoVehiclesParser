@@ -2,8 +2,8 @@
 using RabbitMQ.Client.Events;
 using RemTech.SharedKernel.Infrastructure.NpgSql;
 using RemTech.SharedKernel.Infrastructure.RabbitMq;
-using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models;
-using RemTechAvitoVehiclesParser.ParserWorkStages.CatalogueParsing.Models.Extensions;
+using RemTechAvitoVehiclesParser.ParserWorkStages.PaginationParsing;
+using RemTechAvitoVehiclesParser.ParserWorkStages.PaginationParsing.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Extensions;
 using RemTechAvitoVehiclesParser.ParserWorkStages.WorkStages.Models;
 using RemTechAvitoVehiclesParser.SharedDependencies.Constants;
@@ -17,11 +17,13 @@ public sealed class ParserWorkStartListenerService(
 ) : BackgroundService
 {
     private readonly Serilog.ILogger _logger = logger.ForContext<ParserWorkStartListenerService>();
-    private const string Queue = ConstantsForMainApplicationCommunication.ParsersQueue;
-    private const string Exchange = ConstantsForMainApplicationCommunication.ParsersExchange;
+    private static readonly string Queue = 
+        $"{ConstantsForMainApplicationCommunication.CurrentServiceDomain}.{ConstantsForMainApplicationCommunication.CurrentServiceType}.start";
+    private static readonly string Exchange = 
+        $"{ConstantsForMainApplicationCommunication.CurrentServiceDomain}.{ConstantsForMainApplicationCommunication.CurrentServiceType}";
     private const string Type = "topic";
     private static readonly string RoutingKey =
-        $"start.{ConstantsForMainApplicationCommunication.CurrentServiceDomain}.{ConstantsForMainApplicationCommunication.CurrentServiceType}";
+        $"{ConstantsForMainApplicationCommunication.CurrentServiceDomain}.{ConstantsForMainApplicationCommunication.CurrentServiceType}.start";
     private IChannel _channel = null!;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
