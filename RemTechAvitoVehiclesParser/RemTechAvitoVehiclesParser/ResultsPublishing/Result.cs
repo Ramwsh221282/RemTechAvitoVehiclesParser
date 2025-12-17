@@ -8,11 +8,11 @@ public sealed class Result
     {
         await TextFileResult.Publish(ct);
     }
-    
+
     public static Result CreateTextFile(string contents, string filePath)
     {
         return new Result() { TextFileResult = new TextFileResult(contents, filePath) };
     }
-    
+
     private Result() { }
 }

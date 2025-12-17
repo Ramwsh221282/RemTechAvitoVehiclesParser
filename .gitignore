@@ -11,6 +11,8 @@ nuget.config
 ./idea
 idea/
 
+.vscode/
+
 # User-specific files
 *.rsuser
 *.suo
